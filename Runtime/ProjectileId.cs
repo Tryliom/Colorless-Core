@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -32,6 +32,36 @@ namespace ColorlessOdyssey
         public static bool operator !=(ProjectileId a, ProjectileId b) => a.Value != b.Value;
     }
 
+    [Flags]
+    public enum ProjectileFlags
+    {
+        None = 0,
+        Enemy = 1,
+        Melee = 2
+    }
+
+    /// <summary>
+    /// Declares metadata of a projectile id field. Read by <see cref="ProjectileIdRegistry"/>, so it is not stored in the serialized id.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field)]
+    public sealed class ProjectileFlagsAttribute : Attribute
+    {
+        public readonly ProjectileFlags Flags;
+
+        public ProjectileFlagsAttribute(ProjectileFlags flags)
+        {
+            Flags = flags;
+        }
+    }
+
+    public static class ProjectileIdExtensions
+    {
+        public static ProjectileFlags GetFlags(this ProjectileId id) => ProjectileIdRegistry.GetFlags(id);
+        public static bool HasFlag(this ProjectileId id, ProjectileFlags flag) => (ProjectileIdRegistry.GetFlags(id) & flag) == flag;
+        public static bool IsEnemyProjectile(this ProjectileId id) => id.HasFlag(ProjectileFlags.Enemy);
+        public static bool IsMeleeProjectile(this ProjectileId id) => id.HasFlag(ProjectileFlags.Melee);
+    }
+
     /// <summary>
     /// Base game projectile ids. Fields are not constants, so use == instead of switch/case.
     /// Fields must stay non-readonly: the registry rewrites them with their namespaced id.
@@ -42,7 +72,8 @@ namespace ColorlessOdyssey
         public static ProjectileId Axe = new("axe");
         public static ProjectileId BouncingBall = new("bouncing_ball");
         public static ProjectileId Bullet = new("bullet");
-        public static ProjectileId EnemyProjectile = new("enemy_projectile");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyProjectile = new("enemy_projectile");
         public static ProjectileId GravityShell = new("gravity_shell");
         public static ProjectileId MagicDragonBreathing = new("magic_dragon_breathing");
         public static ProjectileId Laser = new("laser");
@@ -55,13 +86,15 @@ namespace ColorlessOdyssey
         public static ProjectileId GreenSpike = new("green_spike");
         public static ProjectileId FireBall = new("fire_ball");
         public static ProjectileId SnowBall = new("snow_ball");
-        public static ProjectileId Slash = new("slash");
+		[ProjectileFlags(ProjectileFlags.Melee)]
+		public static ProjectileId Slash = new("slash");
         public static ProjectileId Wave = new("wave");
         public static ProjectileId Bubble = new("bubble");
         public static ProjectileId EnergyBall = new("energy_ball");
         public static ProjectileId Arrow = new("arrow");
         public static ProjectileId HolyCross = new("holy_cross");
-        public static ProjectileId RapierMeleeProjectile = new("rapier_melee_projectile");
+		[ProjectileFlags(ProjectileFlags.Melee)]
+		public static ProjectileId RapierMeleeProjectile = new("rapier_melee_projectile");
         public static ProjectileId FlyingDagger = new("flying_dagger");
         public static ProjectileId FlyingSword = new("flying_sword");
         public static ProjectileId FireArrow = new("fire_arrow");
@@ -76,10 +109,12 @@ namespace ColorlessOdyssey
         public static ProjectileId SlowThunderBall = new("slow_thunder_ball");
         public static ProjectileId CrossThunderBall = new("cross_thunder_ball");
         public static ProjectileId KwakBall = new("kwak_ball");
-        public static ProjectileId EnemyMagicArrow = new("enemy_magic_arrow");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyMagicArrow = new("enemy_magic_arrow");
         public static ProjectileId PlayerMagicArrow = new("player_magic_arrow");
         public static ProjectileId FallingStar = new("falling_star");
-        public static ProjectileId EnemyThunderBall = new("enemy_thunder_ball");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyThunderBall = new("enemy_thunder_ball");
         public static ProjectileId SagittariusArrow = new("sagittarius_arrow");
         public static ProjectileId SoulSword = new("soul_sword");
         public static ProjectileId Soul = new("soul");
@@ -91,13 +126,19 @@ namespace ColorlessOdyssey
         public static ProjectileId GoldenBullet = new("golden_bullet");
         public static ProjectileId UnstableSpear = new("unstable_spear");
         public static ProjectileId ExplosiveSkull = new("explosive_skull");
-        public static ProjectileId EnemySoulSword = new("enemy_soul_sword");
-        public static ProjectileId EnemyShell = new("enemy_shell");
-        public static ProjectileId EnemyMeteor = new("enemy_meteor");
-        public static ProjectileId EnemyShuriken = new("enemy_shuriken");
-        public static ProjectileId EnemyPulsatingArrow = new("enemy_pulsating_arrow");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemySoulSword = new("enemy_soul_sword");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyShell = new("enemy_shell");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyMeteor = new("enemy_meteor");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyShuriken = new("enemy_shuriken");
+		[ProjectileFlags(ProjectileFlags.Enemy)]
+		public static ProjectileId EnemyPulsatingArrow = new("enemy_pulsating_arrow");
         public static ProjectileId ChainLightning = new("chain_lightning");
-        public static ProjectileId IzanagiSpinAttack = new("izanagi_spin_attack");
+		[ProjectileFlags(ProjectileFlags.Melee)]
+		public static ProjectileId IzanagiSpinAttack = new("izanagi_spin_attack");
         public static ProjectileId ControllableSnowBall = new("controllable_snow_ball");
         public static ProjectileId FairyFire = new("fairy_fire");
         public static ProjectileId FairyFrost = new("fairy_frost");
@@ -140,6 +181,7 @@ namespace ColorlessOdyssey
 
         private static List<Entry> _entries;
         private static HashSet<string> _ids;
+        private static Dictionary<string, ProjectileFlags> _flags;
 
         public readonly struct Entry
         {
@@ -158,6 +200,7 @@ namespace ColorlessOdyssey
         {
             _entries = new List<Entry>();
             _ids = new HashSet<string>();
+            _flags = new Dictionary<string, ProjectileFlags>();
 
             Collect(typeof(ProjectileIds), false);
 
@@ -175,6 +218,16 @@ namespace ColorlessOdyssey
             }
 
             return _entries;
+        }
+
+        public static ProjectileFlags GetFlags(ProjectileId id)
+        {
+            if (_flags == null)
+            {
+                Initialize();
+            }
+
+            return _flags.GetValueOrDefault(id.Value, ProjectileFlags.None);
         }
 
         /// <summary>
@@ -257,6 +310,13 @@ namespace ColorlessOdyssey
                 {
                     Debug.LogWarning($"Projectile id '{id.Value}' is declared twice, the duplicate '{type.FullName}.{field.Name}' is skipped.");
                     continue;
+                }
+
+                var flagsAttribute = (ProjectileFlagsAttribute) Attribute.GetCustomAttribute(field, typeof(ProjectileFlagsAttribute));
+
+                if (flagsAttribute != null)
+                {
+                    _flags[id.Value] = flagsAttribute.Flags;
                 }
 
                 _entries.Add(new Entry(id, isModded));
