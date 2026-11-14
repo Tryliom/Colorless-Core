@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ColorlessCore.Inspector;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
@@ -25,15 +26,15 @@ public class EnemyPattern : MonoBehaviour
     public AnimationCurve ChargeFxRadiusCurve;
     public AnimationCurve ChargeFxSpeedCurve;
     public AnimationCurve ChargeFxSpawnTimeCurve;
-    [FormerlySerializedAs("_enemyType")] [SerializeField] 
+    [FormerlySerializedAs("_enemyType")] [SerializeField]
     public EnemyType EnemyType;
-    [SerializeField] 
+    [SerializeField]
     public BossType BossType;
-    [FormerlySerializedAs("_fly")] [SerializeField] 
+    [FormerlySerializedAs("_fly")] [SerializeField]
     public bool Flying;
     
     public GridManager GridManager =>throw null;
-    [SerializeReference] 
+    [SerializeReference]
     public List<Pattern> NoTargetPatterns;
     
     [HideInInspector] public bool IsControlledByPlayer;

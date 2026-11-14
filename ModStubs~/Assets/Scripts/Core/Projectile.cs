@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ColorlessOdyssey;
+using ColorlessCore.Inspector;
 using TryliomUtility;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -154,6 +155,7 @@ public class ConcentratedProjectileSettings
     public bool CopyFromSource ;
     [Tooltip("Damage percentage of the source projectile to apply to the spawned projectiles, applied after the source projectile's damage modifiers")]
     public float DamagePercentage ;
+    
     public ProjectileSettings Settings ;
 
     /// <summary>Returns a copy of these settings.</summary>
@@ -175,6 +177,7 @@ public class ProjectileOverTimeSettings
 	public float BaseDamage;
 	[Tooltip("Damage percentage of the source projectile to apply to the spawned projectiles, applied after the source projectile's damage modifiers")]
 	public float DamagePercentage;
+	
 	public ProjectileSettings Settings ;
 
 	/// <summary>Returns a copy of these settings.</summary>
@@ -228,13 +231,12 @@ public class Projectile : MonoBehaviour
         public Ray Ray;
         public ProjectileAttachedRaySettings Settings;
     }
-
     
-    [SerializeField] 
+    [SerializeField]
     private Material _defaultMaterial;
-    [SerializeField] 
+    [SerializeField]
     private Material _fullSaturationMaterial;
-    [SerializeField] 
+    [SerializeField]
     private Material _enemyMaterial;
     
     [SerializeField] private CircleCollider2D _physicalCollider;
@@ -249,7 +251,7 @@ public class Projectile : MonoBehaviour
     [SerializeField] private BurstExplosionSettings _explosionOnExpireSettings;
     
     private enum ProjectileMaterialTypes { Default, FullSaturation, Enemy }
-    [SerializeField] 
+    [SerializeField]
     private ProjectileId _projectileId;
     [SerializeField] private ProjectileModifier _projectileModifier;
     [SerializeField] private DamageType _damageType ;
@@ -258,13 +260,13 @@ public class Projectile : MonoBehaviour
     [SerializeField]
     private int _effectStacks ;
     
-    [SerializeField] 
+    [SerializeField]
     private bool _rotate;
-    [SerializeField,Range(-1080, 1080)] 
+    [SerializeField,Range(-1080, 1080)]
 	private float _rotationSpeed;
-    [SerializeField] 
+    [SerializeField]
 	private bool _randomizeRotationSign;
-    [SerializeField] 
+    [SerializeField]
 	private MinMaxRange<float> _randomBaseRotation ;
 	[SerializeField]
 	private bool _increaseRotationOverTime;
@@ -298,7 +300,7 @@ public class Projectile : MonoBehaviour
     [SerializeField]
 	private ProjectileOverTimeSettings _defaultProjectileOverTimeSettings ;
 	
-    [SerializeField] 
+    [SerializeField]
 	private bool _stuckOnEntity;
 	
 	[SerializeField]
@@ -306,7 +308,7 @@ public class Projectile : MonoBehaviour
 	[SerializeField]
 	private TrajectorySettings _defaultTrajectorySettings ;
     
-    [SerializeField] 
+    [SerializeField]
 	private bool _returnToSenderOnExpire;
 	[SerializeField]
 	private ReturnToSenderSettings _defaultReturnToSenderSettings ;
@@ -315,7 +317,7 @@ public class Projectile : MonoBehaviour
 	private bool _hasAttachedRays;
 	[SerializeField]
 	private List<ProjectileAttachedRaySettings> _attachedRays ;
-    [SerializeField,FormerlySerializedAs("_spawnClouds")] 
+    [SerializeField,FormerlySerializedAs("_spawnClouds")]
     private bool _spawnParticles;
     [SerializeField]
     private ParticleSystemSettings _particleSystemSettings ;
@@ -326,9 +328,9 @@ public class Projectile : MonoBehaviour
     [SerializeField]
     private Vector3 _particleOrbitPositionOffset;
     [FormerlySerializedAs("_doNotSpawnCloudsOnDestroy")]
-    [SerializeField] 
+    [SerializeField]
     private bool _doNotSpawnParticlesOnDestroy;
-    [SerializeField] 
+    [SerializeField]
     private bool _useTrail;
     [SerializeField]
     private PixelTrailData _trailData ;
@@ -348,15 +350,15 @@ public class Projectile : MonoBehaviour
     [SerializeField] private List<StatOverTime> _statsOverTime ;
     [SerializeField] private List<EffectOnHit> _effectsOnHit ;
     [SerializeField] private List<AoeOnHit> _aoeOnHit ;
-    [SerializeField,Tooltip("Time is the angle in degrees, R is the radius multiplier"),FormerlySerializedAs("_turnAroundRadiusMultiplier")] 
+    [SerializeField,Tooltip("Time is the angle in degrees, R is the radius multiplier"),FormerlySerializedAs("_turnAroundRadiusMultiplier")]
     private AnimationCurve _orbitRadiusMultiplier;
     [SerializeField,FormerlySerializedAs("_turnAroundRangeOnEnemy")]
     private AnimationCurve _orbitRangeOnEnemy;
-    [SerializeField,Tooltip("The angle before it trigger the turn range to an enemy, in degrees"),FormerlySerializedAs("_turnAroundRangeAngleOffset")] 
+    [SerializeField,Tooltip("The angle before it trigger the turn range to an enemy, in degrees"),FormerlySerializedAs("_turnAroundRangeAngleOffset")]
     private float _orbitingRangeAngleOffset ;
     [SerializeField,Tooltip("Will change its angle to follow the orbit direction, if false it will keep its initial angle")]
     private bool _followOrbitDirection;
-    [SerializeField,Tooltip("The added angle to the face target direction, in degrees multiplied by the speed percentage (max 1)"),FormerlySerializedAs("_turnFaceTargetAddedAngle")] 
+    [SerializeField,Tooltip("The added angle to the face target direction, in degrees multiplied by the speed percentage (max 1)"),FormerlySerializedAs("_turnFaceTargetAddedAngle")]
     private float _orbitFaceTargetAddedAngle;
     [SerializeField] private bool _brokeIntoPieces;
     [SerializeField] private bool _brokeTypeRandom;
@@ -372,7 +374,7 @@ public class Projectile : MonoBehaviour
     [SerializeField] private List<Color> _emissiveColorPerLevel ;
     [Tooltip("The time it takes to reach the falling point")]
     [SerializeField] private float _fallingTime ;
-    [SerializeField,Tooltip("Will follow player and break on it after triggering the OnPlayerContactWithInteractableProjectile")] 
+    [SerializeField,Tooltip("Will follow player and break on it after triggering the OnPlayerContactWithInteractableProjectile")]
     private bool _followPlayer;
     [SerializeField]
     private bool _circularFollow;

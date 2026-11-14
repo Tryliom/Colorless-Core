@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ColorlessCore.Inspector;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -33,7 +34,7 @@ public class RewardCondition
 [CreateAssetMenu(fileName = "EmptyReward", menuName = "Rewards/Empty", order = 0)]
 public class Reward : ScriptableObject
 {
-    [Header("Information")] 
+    [Header("Information")]
     public string LocalizedPrefix;
     public Sprite Icon;
     public bool ColorIconWithTheme;
@@ -46,7 +47,7 @@ public class Reward : ScriptableObject
     [Header("Condition")]
     public bool HasCondition;
     public RewardCondition Condition;
-    [FormerlySerializedAs("CannotBeElite")] 
+    [FormerlySerializedAs("CannotBeElite")]
     public bool NoModifiers;
     public Rarity Rarity;
 

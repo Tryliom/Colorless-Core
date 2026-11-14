@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using ColorlessCore.Inspector;
 using TryliomUtility;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -135,6 +136,7 @@ public class StatFieldInfo
 [Serializable]
 public class StatsData
 {
+    
     public bool ShowModifiedOnly;
     [SerializeField] public int RedHeartContainers;
     [SerializeField] public int RedHearts;

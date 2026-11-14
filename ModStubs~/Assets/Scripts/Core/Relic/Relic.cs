@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ColorlessCore.Inspector;
 using TryliomUtility;
 using UnityEditor;
 using UnityEngine;
@@ -45,10 +46,10 @@ public enum AltarRelicChoice
 
 public class Relic : MonoBehaviour
 {
-    [SerializeField] 
-    protected RunData RunData;
     
 
+	protected RunData RunData =>throw null;
+	
     public string Name =>throw null;
     public string LocalizationNamePrefix =>throw null;
     public string UniqueID =>throw null;

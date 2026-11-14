@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ColorlessOdyssey;
+using ColorlessCore.Inspector;
 using TryliomUtility;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -51,7 +52,7 @@ public class RunData : ScriptableObject
     public bool AskLanguageOnStart;
     public float EnemyHealthMultiplier ;
     public List<Relic> DebugRelics ;
-    
+
     public List<Collectible> DebugCollectiblesInInventory ;
     public List<GameObject> DebugItemsSpawned ;
     public int DebugStartGold;

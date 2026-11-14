@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using ColorlessOdyssey;
 using System.Linq;
+using ColorlessCore.Inspector;
 using TryliomUtility;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -66,7 +67,7 @@ public class WeaponRaySettings
     public RayGrowSettings RayGrowSettings;
     public StatsData Stats;
 
-    [Header("Common settings")] 
+    [Header("Common settings")]
     public float MaxScaleX;
     [FormerlySerializedAs("APS")] public float AttackPerSeconds ;
     
@@ -240,17 +241,17 @@ public enum WeaponShootType
 public class WeaponShootSettings
 {
     public MinMaxRange<int> ShootNumber ;
-    [Range(0f, 1f)] 
+    [Range(0f, 1f)]
     public float ChanceToUse ;
     public bool ResetRotationOrder ;
     public Vector3 ShootingPositionOffset ;
     
-    [Tooltip("If the last shoot will have a different APS, to induce a cooldown")] 
+    [Tooltip("If the last shoot will have a different APS, to induce a cooldown")]
     public bool ApsOnLastShoot;
     [Tooltip("The APS used for the last shoot")]
     public float LastShootAps ;
     
-    [Tooltip("If true, will shot automatically all the left shots. If previous one was also true and this one not charged, will continue.")] 
+    [Tooltip("If true, will shot automatically all the left shots. If previous one was also true and this one not charged, will continue.")]
     public bool UseAllShots;
 
     [Tooltip("If this shoot settings use ammo, can be reloaded and which magazine it uses")]
@@ -287,9 +288,9 @@ public class ShootSettings
     [SerializeField]
     public int EffectStacks ;
     public WeaponRotationAnimationType RotationAnimationType ;
-    [Tooltip("If true, the weapon will start with the rotation of the attack rotation curve, otherwise it will start with the reverse rotation")] 
+    [Tooltip("If true, the weapon will start with the rotation of the attack rotation curve, otherwise it will start with the reverse rotation")]
     public bool UseStartRotationByDefault ;
-    [Tooltip("This will be used to rotate the weapon when attacking, then do it at reverse the second time")] 
+    [Tooltip("This will be used to rotate the weapon when attacking, then do it at reverse the second time")]
     public AnimationCurve AttackRotationCurve;
     public float InAnimationRadiusMultiplier;
     public List<StatOverTime> StatsOverTime ;
