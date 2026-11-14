@@ -51,9 +51,9 @@ public class Reward : ScriptableObject
     public Rarity Rarity;
 
     public virtual void GiveReward(Vector3 rewardPosition) {throw new System.NotImplementedException();}    
-    public string UniqueID =>thrownull;
-    public string Name =>thrownull;
-    public string Description =>thrownull;
+    public string UniqueID =>throw null;
+    public string Name =>throw null;
+    public string Description =>throw null;
     
     protected float GetLootRateModifier()
 {throw new System.NotImplementedException();}}

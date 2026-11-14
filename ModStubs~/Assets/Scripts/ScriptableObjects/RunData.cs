@@ -212,8 +212,8 @@ public class RunData : ScriptableObject
     /**
      * Get the singleton asset of RunData
      */
-    public static RunData Asset =>thrownull;
-    public static Camera MainCamera =>thrownull;
+    public static RunData Asset =>throw null;
+    public static Camera MainCamera =>throw null;
     
     public void Update()
 {throw new System.NotImplementedException();}

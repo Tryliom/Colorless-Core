@@ -10,7 +10,7 @@ internal class TagRelation
 	[SerializeField,Tooltip("Used to describe what this tag is or is used to")]
 	private string _devDescription;
 
-    public string DevDescription =>thrownull;
+    public string DevDescription =>throw null;
 
     public List<Tag> Tags ;
     public List<StatName> Stats ;

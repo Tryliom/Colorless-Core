@@ -14,7 +14,7 @@ public class AmountEvent
 	public float BonusAmountPercentage;
 	public float BonusAmountFlat;
 
-	public float FinalAmount =>thrownull;
+	public float FinalAmount =>throw null;
 	
 	public SourceOrigin Origin;
 }

@@ -34,7 +34,7 @@ public class PixelTrail : MonoBehaviour
 	[SerializeField,Space] private TrailRenderer _trailRenderer;
 	[SerializeField] private GradientMode _mode ;
 	
-	public TrailRenderer TrailRenderer =>thrownull;
+	public TrailRenderer TrailRenderer =>throw null;
 	
 	public void Setup(PixelTrailData data, Gradient gradient)
 {throw new System.NotImplementedException();}}

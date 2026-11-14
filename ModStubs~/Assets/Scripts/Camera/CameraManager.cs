@@ -20,8 +20,8 @@ public class CameraManager : MonoBehaviour
 	[SerializeField] private Renderer2DData _rendererData;
 	[SerializeField] private string _featureName ;
 	
-	public CinemachineCamera PlayerCamera =>thrownull;
-	public Camera WorldSpaceCamera =>thrownull;
+	public CinemachineCamera PlayerCamera =>throw null;
+	public Camera WorldSpaceCamera =>throw null;
 
 	public void Init()
 {throw new System.NotImplementedException();}

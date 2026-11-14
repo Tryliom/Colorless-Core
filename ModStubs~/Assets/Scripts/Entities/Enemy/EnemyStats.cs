@@ -26,8 +26,8 @@ public class EnemyStats : MonoBehaviour
      * Temp stat used to add stats from other classes not directly linked like StolenSpeed effect
      */
     public StatsData TempStats { get; }     
-    public float ContactFinalDamage =>thrownull;
-    public float ProjectileFinalDamage =>thrownull;
+    public float ContactFinalDamage =>throw null;
+    public float ProjectileFinalDamage =>throw null;
     
     public float GetMaxHealth()
 {throw new System.NotImplementedException();}    

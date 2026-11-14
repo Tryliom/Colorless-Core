@@ -398,35 +398,35 @@ public class Weapon : MonoBehaviour
     public int CurrentShootSettingsIndex { get; private set; }     public int CurrentShootNumber { get; private set; }
     public int CurrentMaxShootNumber { get; private set; }
 
-    public float InAnimationRadiusMultiplier =>thrownull;
-    public GameObject ProjectileSpawnPoint =>thrownull;
-    public WeaponDropAnimator WeaponDropAnimator =>thrownull;
+    public float InAnimationRadiusMultiplier =>throw null;
+    public GameObject ProjectileSpawnPoint =>throw null;
+    public WeaponDropAnimator WeaponDropAnimator =>throw null;
     public List<ThemeColor> ThemeColorsPerLevel { get; set; } 
     public List<Tag> Tags
     {
         get
-=>thrownull;    }
+=>throw null;    }
     
-    public List<StatName> ScalingStats =>thrownull;
+    public List<StatName> ScalingStats =>throw null;
 
-    public WeaponName WeaponName =>thrownull;
-    public ThemeColor WeaponTypeColor =>thrownull;
+    public WeaponName WeaponName =>throw null;
+    public ThemeColor WeaponTypeColor =>throw null;
 
     public StatsData StatsGainPerLevel
     {
         get
-=>thrownull;    }
+=>throw null;    }
 
-    public Rarity Rarity =>thrownull;
-    public WeaponHandType WeaponHandType =>thrownull;
+    public Rarity Rarity =>throw null;
+    public WeaponHandType WeaponHandType =>throw null;
     
-    public List<SpriteRenderer> SpritesPerLevel =>thrownull;
-    public List<SpriteSortingZ> SpriteSortingZPerLevel =>thrownull;
+    public List<SpriteRenderer> SpritesPerLevel =>throw null;
+    public List<SpriteSortingZ> SpriteSortingZPerLevel =>throw null;
     
-    public float MinDamage =>thrownull;
-    public float MaxDamage =>thrownull;
-    public float AttackSpeed =>thrownull;
-    public bool ShootNearMouse =>thrownull;
+    public float MinDamage =>throw null;
+    public float MaxDamage =>throw null;
+    public float AttackSpeed =>throw null;
+    public bool ShootNearMouse =>throw null;
     
     public float BaseRotationZ { get; private set; }
 
@@ -436,7 +436,7 @@ public class Weapon : MonoBehaviour
     public StatsData InsideWeaponStats
     {
         get
-=>thrownull;    }
+=>throw null;    }
     public List<Sprite> OriginalSpritesPerLevel { get; } 
     /// <summary>Reference duration of the running cooldown: the one applied after skipping shots if any, otherwise the current max cooldown.</summary>
     public float GetCooldownReference()
@@ -632,7 +632,7 @@ public class Weapon : MonoBehaviour
     public bool IsLastEnergyShot()
 {throw new System.NotImplementedException();}
     /// <summary>Energy gained per normal shot with stat modifiers applied. Returns 0 when not an energy weapon.</summary>
-    public float EnergyGainPerShot =>thrownull;
+    public float EnergyGainPerShot =>throw null;
 
     /// <summary>
     /// Cancels any active mana overcharge sequence immediately,
@@ -644,7 +644,7 @@ public class Weapon : MonoBehaviour
     /// <summary>Returns true if this weapon uses the mana system.</summary>
     public bool IsManaWeapon() {throw new System.NotImplementedException();}
     /// <summary>Mana consumed per shot.</summary>
-    public float ManaCostPerShot =>thrownull;
+    public float ManaCostPerShot =>throw null;
 
     /// <summary>Returns true while the weapon is executing its mana overcharge sequence.</summary>
     public bool IsInManaOverchargeSequence() {throw new System.NotImplementedException();}

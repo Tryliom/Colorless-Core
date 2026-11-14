@@ -16,7 +16,7 @@ public class AnimatedValueText : MonoBehaviour
     [SerializeField] private float _animationDuration ;
     
     public TextMeshProUGUI Text { get; private set; }
-    public RectTransform RectTransform =>thrownull;
+    public RectTransform RectTransform =>throw null;
 
     /**
      * Sets a new target value and starts the animation towards it. If animate is false, it will jump to the new value immediately without animation.

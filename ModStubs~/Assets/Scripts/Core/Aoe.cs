@@ -90,7 +90,7 @@ public class Aoe : MonoBehaviour
     [SerializeField] private Color _pulseColor2;
     [SerializeField] private StatsData _baseStats ;
     
-    public AoeType AoeType =>thrownull;
+    public AoeType AoeType =>throw null;
 
     // Fires when this aoe gets deactivated to return it to the pool. Cleared in Reset() to avoid stale subscriptions.
     public event Action<Aoe> OnDeactivated;

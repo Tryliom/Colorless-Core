@@ -25,7 +25,7 @@ public class Dash : MonoBehaviour
     /// <summary>
     /// Effective duration of a dash in seconds.
     /// </summary>
-    public float DashDuration =>thrownull;
+    public float DashDuration =>throw null;
 
     /**
      * Active all things linked to dash, but not the dash itself

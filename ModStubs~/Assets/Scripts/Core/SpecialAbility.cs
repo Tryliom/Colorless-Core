@@ -16,26 +16,26 @@ public class SpecialAbility : MonoBehaviour
     [SerializeField] private List<Tag> _tags;
     [SerializeField] private List<StatName> _scalingStats;
     
-    public string Name =>thrownull;
-    public string Description =>thrownull;
+    public string Name =>throw null;
+    public string Description =>throw null;
 
     /// <summary>
     /// Returns the ability description, using the minified version (key + "_MIN") when requested and available.
     /// </summary>
     public string GetDescription(bool minified = false)
 {throw new System.NotImplementedException();}    
-    public List<Icon> Icons =>thrownull;
+    public List<Icon> Icons =>throw null;
     
-    public string LocalizationNamePrefix =>thrownull;
+    public string LocalizationNamePrefix =>throw null;
     
-    public List<Tag> Tags =>thrownull;
-    public List<StatName> ScalingStats =>thrownull;
+    public List<Tag> Tags =>throw null;
+    public List<StatName> ScalingStats =>throw null;
 
-    public float Cooldown =>thrownull;
-    public float CurrentCooldown =>thrownull;
-    public float InUseTime =>thrownull;
-    public float MaxUseTime =>thrownull;
-    public SpriteRenderer SpriteRenderer =>thrownull;
+    public float Cooldown =>throw null;
+    public float CurrentCooldown =>throw null;
+    public float InUseTime =>throw null;
+    public float MaxUseTime =>throw null;
+    public SpriteRenderer SpriteRenderer =>throw null;
     
     public Data GetData()
 {throw new System.NotImplementedException();}

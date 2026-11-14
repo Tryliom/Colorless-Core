@@ -27,7 +27,7 @@ public class RelicSelector : GroundItem
     [SerializeField]
     private ThemeColor _themeColor;
     
-    public override CollectibleType GetCollectibleType() {throw new System.NotImplementedException();}    public ObjectLauncher ObjectLauncher =>thrownull;
+    public override CollectibleType GetCollectibleType() {throw new System.NotImplementedException();}    public ObjectLauncher ObjectLauncher =>throw null;
     protected List<string> AvailableRelicsIds ;
     protected readonly List<Relic> AvailableRelics ;
 

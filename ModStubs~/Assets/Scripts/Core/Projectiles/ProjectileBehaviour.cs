@@ -8,7 +8,7 @@ using UnityEngine;
 [RequireComponent(typeof(Projectile))]
 public abstract class ProjectileBehaviour : MonoBehaviour
 {
-    protected static RunData RunData =>thrownull;
+    protected static RunData RunData =>throw null;
     protected Projectile Projectile { get; private set; }
 
     protected virtual void Awake()

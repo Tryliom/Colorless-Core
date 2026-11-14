@@ -40,7 +40,7 @@ public class HeartContainer : MonoBehaviour
     [SerializeField] private Sprite _yellowHeart;
     [SerializeField] private Sprite _yellowHalfHeart;
     
-    public RectTransform RectTransform =>thrownull;
+    public RectTransform RectTransform =>throw null;
     public HeartType HeartType { get; private set; }
     public HeartState HeartState { get; private set; }
 

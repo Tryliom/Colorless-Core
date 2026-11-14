@@ -29,14 +29,14 @@ public class ClassType : MonoBehaviour
     [Header("Health")]
     public bool NoRedHearts;
     
-    public ClassTypeEnum ClassTypeEnum =>thrownull;
-    public Weapon StartingLeftWeapon =>thrownull;
-    public Weapon StartingRightWeapon =>thrownull;
-    public SpecialAbility SpecialAbility =>thrownull;
-    public List<Relic> PassiveRelics =>thrownull;
+    public ClassTypeEnum ClassTypeEnum =>throw null;
+    public Weapon StartingLeftWeapon =>throw null;
+    public Weapon StartingRightWeapon =>throw null;
+    public SpecialAbility SpecialAbility =>throw null;
+    public List<Relic> PassiveRelics =>throw null;
     
-    public string LocalizedName =>thrownull;
-    public PlayerComponents PlayerComponents =>thrownull;
+    public string LocalizedName =>throw null;
+    public PlayerComponents PlayerComponents =>throw null;
     
     // Only for You class
     

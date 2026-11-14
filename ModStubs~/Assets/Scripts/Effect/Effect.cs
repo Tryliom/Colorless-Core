@@ -52,7 +52,7 @@ public class Effect
     protected GameObject GameObjectAttachedTo;
     protected EnemyComponents EnemyComponentsAttachedTo;
     protected readonly StatsData Stats;
-    protected RunData RunData =>thrownull;
+    protected RunData RunData =>throw null;
 
     public EffectName Name;
     public EffectType Type;
@@ -66,10 +66,10 @@ public class Effect
     public float RemainingDuration;
     
     // Functions to simplify the access to the enemy components/player attached to the effect
-    protected EnemyHealthManager HealthManager =>thrownull;
-    protected EnemyPattern PatternManager =>thrownull;
-    protected EffectManager EffectManager =>thrownull;
-    protected Transform Transform =>thrownull;
+    protected EnemyHealthManager HealthManager =>throw null;
+    protected EnemyPattern PatternManager =>throw null;
+    protected EffectManager EffectManager =>throw null;
+    protected Transform Transform =>throw null;
 
     /**
      * Called after the effect is created or after being loaded from a save.

@@ -9,7 +9,7 @@ public class Experience
 	public float BonusMultiplier;
 	public float BonusAmount;
 	
-	public int Total =>thrownull;
+	public int Total =>throw null;
 	
 	public Experience(float amount, float bonusMultiplier = 0f, float bonusAmount = 0f)
 {throw new System.NotImplementedException();}}
@@ -28,7 +28,7 @@ public class EnemyLevelManager : MonoBehaviour
 
 	public int Level { get; private set; } 	
 	// Only for allies that gain experience
-	public long Experience { get; private set; } 	public long MaxExperience =>thrownull;
+	public long Experience { get; private set; } 	public long MaxExperience =>throw null;
 
 	public void Setup(int level, long experience)
 {throw new System.NotImplementedException();}	

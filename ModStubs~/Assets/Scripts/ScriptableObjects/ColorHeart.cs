@@ -8,7 +8,7 @@ public class ColorHeart : ScriptableObject
     public RunData RunData;
     public StatsData StatsData;
     public string LocalizationKey;
-    public List<Icon> Icons =>thrownull;
+    public List<Icon> Icons =>throw null;
     protected bool HasHeart;
     
     public virtual void OnStart() {throw new System.NotImplementedException();}    public virtual void OnUpdate() {throw new System.NotImplementedException();}    public virtual void OnConsume(HeartType heartType) {throw new System.NotImplementedException();}}

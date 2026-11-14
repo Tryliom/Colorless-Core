@@ -161,7 +161,7 @@ public class ParticleManager : MonoBehaviour
     [SerializeField,Space]
     private float _baseTrailTime ;
     
-    public Gradient DefaultGradient =>thrownull;
+    public Gradient DefaultGradient =>throw null;
     
     public void ResetGracePeriod()
 {throw new System.NotImplementedException();}
@@ -240,5 +240,5 @@ public class ParticleManager : MonoBehaviour
 {throw new System.NotImplementedException();}
     public void ClearAllParticles()
 {throw new System.NotImplementedException();}    
-    public bool LimitParticles =>thrownull;
+    public bool LimitParticles =>throw null;
 }

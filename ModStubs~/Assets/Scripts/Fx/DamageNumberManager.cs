@@ -14,7 +14,7 @@ public class DamageNumberManager : MonoBehaviour
     {
         public readonly Dictionary<EffectName, DamageNumberText> EffectTexts ;
         public readonly Dictionary<DamageType, DamageNumberText> DamageTypeTexts ;
-        public IReadOnlyList<DamageNumberText> ActiveTexts =>thrownull;
+        public IReadOnlyList<DamageNumberText> ActiveTexts =>throw null;
 
         public void RegisterText(DamageNumberText text) {throw new System.NotImplementedException();}        public void UnregisterText(DamageNumberText text) {throw new System.NotImplementedException();}    }
     

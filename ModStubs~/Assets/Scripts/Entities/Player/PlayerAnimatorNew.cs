@@ -39,24 +39,24 @@ public class PlayerAnimatorNew : MonoBehaviour
     [Tooltip("Last frame of the attack clip played at the native speed when shooting, the next ones are played while the weapon reloads (ignored for charged weapons).")]
     [SerializeField] private int _attackShotFrame ;
 
-    public PlayerActionAnimation CurrentAction =>thrownull;
-    public PlayerAimDirection AimDirection =>thrownull;
-    public WeaponRotationAnimationType WeaponAnimationType =>thrownull;
+    public PlayerActionAnimation CurrentAction =>throw null;
+    public PlayerAimDirection AimDirection =>throw null;
+    public WeaponRotationAnimationType WeaponAnimationType =>throw null;
 
     /// <summary>
     /// Animation set of the current weapon rotation animation type (null if not defined).
     /// </summary>
-    public PlayerWeaponAnimationSet AnimationSet =>thrownull;
+    public PlayerWeaponAnimationSet AnimationSet =>throw null;
 
     /// <summary>
     /// Weapon angle in degrees of the current frame (already mirrored when the sprites are flipped).
     /// </summary>
-    public float WeaponAngle =>thrownull;
+    public float WeaponAngle =>throw null;
 
     /// <summary>
     /// Weapon handle position of the current frame in world space.
     /// </summary>
-    public Vector3 HandleWorldPosition =>thrownull;
+    public Vector3 HandleWorldPosition =>throw null;
 
     /// <summary>
     /// Changes the weapon rotation animation type used to pick the animation set (to be used by the weapon controller).

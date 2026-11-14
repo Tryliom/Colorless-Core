@@ -109,10 +109,10 @@ public class Pattern
     protected bool IsUsedInstantly;
 
     // Position and velocity of the targeted entity, used by predictive patterns
-    protected Vector3 TargetEntityPosition =>thrownull;
-    protected Vector2 TargetEntityVelocity =>thrownull;
+    protected Vector3 TargetEntityPosition =>throw null;
+    protected Vector2 TargetEntityVelocity =>throw null;
 
-    public Vector3 ActualTarget =>thrownull; 
+    public Vector3 ActualTarget =>throw null; 
 
     
     // Set up the pattern at the start of the game

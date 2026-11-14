@@ -13,7 +13,7 @@ public class WeaponInfoExtractor
     public string Description;
     public string MinifiedDescription;
     public string LevelDescription;
-    public bool HasMinifiedDescription =>thrownull;
+    public bool HasMinifiedDescription =>throw null;
     public readonly int Level;
     public readonly Rarity Rarity;
     public readonly List<ThemeColor> ColorsInfused;

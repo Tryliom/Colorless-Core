@@ -67,7 +67,7 @@ public class WeaponTooltip : MonoBehaviour
     /// <summary>
     /// Whether the currently displayed weapon has a minified description different from its normal one.
     /// </summary>
-    public bool HasMinifiedDescription =>thrownull;
+    public bool HasMinifiedDescription =>throw null;
 
     public void Display(WeaponInfoExtractor weaponInfo, bool displayPickup = false, bool displayReroll = false, bool displayGlossary = false, bool displayRecycler = false)
 {throw new System.NotImplementedException();}

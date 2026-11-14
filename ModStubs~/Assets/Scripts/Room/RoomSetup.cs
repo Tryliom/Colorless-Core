@@ -64,8 +64,8 @@ public class RoomSetup : MonoBehaviour
     [SerializeField] private ExpoUi _expoUi;
 
     [HideInInspector] public List<BoxCollider2D> DecorationsWallColliders ;
-    public GameObject Decorations =>thrownull;
-    public List<Vector3> DoorsPositions =>thrownull;
+    public GameObject Decorations =>throw null;
+    public List<Vector3> DoorsPositions =>throw null;
     public Room Room { get; private set; }
 
     public void SetupNextRoom()

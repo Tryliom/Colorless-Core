@@ -37,7 +37,7 @@ public class EnemyPattern : MonoBehaviour
     [FormerlySerializedAs("_fly")] [SerializeField] 
     public bool Flying;
     
-    public GridManager GridManager =>thrownull;
+    public GridManager GridManager =>throw null;
     [SerializeReference] 
     public List<Pattern> NoTargetPatterns;
     [SerializeField]

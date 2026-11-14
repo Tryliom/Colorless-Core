@@ -35,10 +35,10 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Door _doorPrefab;
     [SerializeField] private RuleTile _wallTile;
 
-    public Vector3 TopLeftPosition =>thrownull;
-    public Vector3 TopRightPosition =>thrownull;
-    public Vector3 BottomLeftPosition =>thrownull;
-    public Vector3 BottomRightPosition =>thrownull;
+    public Vector3 TopLeftPosition =>throw null;
+    public Vector3 TopRightPosition =>throw null;
+    public Vector3 BottomLeftPosition =>throw null;
+    public Vector3 BottomRightPosition =>throw null;
     public Vector3 CenterPosition { get; private set; }
     public Vector3 RewardPosition { get; private set; }
     public Vector3 PlayerSpawnPosition { get; private set; }

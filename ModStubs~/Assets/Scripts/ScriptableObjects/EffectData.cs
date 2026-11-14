@@ -41,7 +41,7 @@ public class EffectData : ScriptableObject
     [SerializeField] private EffectDictionary _effectDict ;
     [SerializeField] private EffectsSettings _effectsSettings ;
     
-    public EffectsSettings EffectsInternalSettings =>thrownull;
+    public EffectsSettings EffectsInternalSettings =>throw null;
     
     public Sprite GetEffectIcon(EffectName effectName)
 {throw new System.NotImplementedException();}    

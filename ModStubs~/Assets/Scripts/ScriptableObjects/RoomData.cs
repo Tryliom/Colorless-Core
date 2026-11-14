@@ -132,9 +132,9 @@ public class RoomData : ScriptableObject
     [Header("Structures")]
     [SerializeField] private List<Structure> _structures ;
     
-    public Room Hub =>thrownull;
-    public Room TutorialRoad =>thrownull;
-    public Room TutorialCave =>thrownull;
+    public Room Hub =>throw null;
+    public Room TutorialRoad =>throw null;
+    public Room TutorialCave =>throw null;
 
     /**
      * Depending on the reward set and the modifiers, it will choose an adequate room. For example, if the reward has a modifier that forces the next room to be a back room, it will only choose between the rooms that allow back rooms.

@@ -44,7 +44,7 @@ public class Door : MonoBehaviour
     [Header("Lights")] 
     [SerializeField] private GameObject _normalLights;
     
-    public SpriteRenderer DoorRenderer =>thrownull;
+    public SpriteRenderer DoorRenderer =>throw null;
     
     public void Init()
 {throw new System.NotImplementedException();}

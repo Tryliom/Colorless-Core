@@ -80,24 +80,24 @@ public class Relic : MonoBehaviour
     [SerializeField] private List<LevelData> _levels ;
     
 
-    public string Name =>thrownull;
-    public string LocalizationNamePrefix =>thrownull;
-    public string UniqueID =>thrownull;
+    public string Name =>throw null;
+    public string LocalizationNamePrefix =>throw null;
+    public string UniqueID =>throw null;
     
-    public RelicType RelicType =>thrownull;
-    public ThemeColor ThemeColor =>thrownull;
-    public AltarTier AltarTier =>thrownull;
-    public AltarRelicChoice AltarRelicChoice =>thrownull;
+    public RelicType RelicType =>throw null;
+    public ThemeColor ThemeColor =>throw null;
+    public AltarTier AltarTier =>throw null;
+    public AltarRelicChoice AltarRelicChoice =>throw null;
     
     // From 0 to max level
     protected int Level;
     public readonly StatsData Stats ;
     protected bool IsUsedByPlayer;
     
-    public List<Tag> Tags =>thrownull;
-    public List<StatName> ScalingStats =>thrownull;
-    public List<StatName> StatsGiven =>thrownull;
-    public Rarity Rarity =>thrownull;
+    public List<Tag> Tags =>throw null;
+    public List<StatName> ScalingStats =>throw null;
+    public List<StatName> StatsGiven =>throw null;
+    public Rarity Rarity =>throw null;
 
     public bool HasRequiredTags(List<Tag> tags, bool atLeastOne = false)
 {throw new System.NotImplementedException();}    

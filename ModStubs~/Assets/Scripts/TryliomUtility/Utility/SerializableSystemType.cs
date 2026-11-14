@@ -19,14 +19,14 @@ namespace TryliomUtility
 		[SerializeField] private string _assemblyQualifiedName;
 		[SerializeField] private string _assemblyName;
 
-		public string Name =>thrownull;
-		public string AssemblyQualifiedName =>thrownull;
-		public string AssemblyName =>thrownull;
+		public string Name =>throw null;
+		public string AssemblyQualifiedName =>throw null;
+		public string AssemblyName =>throw null;
 
 		public Type SystemType
 		{
 			get
-=>thrownull;		}
+=>throw null;		}
 
 		public SerializableSystemType(Type systemType)
 {throw new System.NotImplementedException();}

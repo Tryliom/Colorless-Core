@@ -21,8 +21,8 @@ public class CollectibleManager : MonoBehaviour
 {
 	[SerializeField] private RunData _runData;
 	
-	public IReadOnlyList<GroundItem> GroundItems =>thrownull;
-	public IReadOnlyList<Weapon> WeaponsOnGround =>thrownull;
+	public IReadOnlyList<GroundItem> GroundItems =>throw null;
+	public IReadOnlyList<Weapon> WeaponsOnGround =>throw null;
 	
 	public void CollectAllActiveCollectibles(CollectibleType type = CollectibleType.None)
 {throw new System.NotImplementedException();}

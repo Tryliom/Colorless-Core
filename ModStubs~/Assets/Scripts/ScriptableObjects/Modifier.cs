@@ -22,7 +22,7 @@ public class Modifier : ScriptableObject
     public float ChanceToAppear;
     public float AddedChancePerMainLevel;
 
-    public string UniqueID =>thrownull;
+    public string UniqueID =>throw null;
     
     public string GetName()
 {throw new System.NotImplementedException();}    

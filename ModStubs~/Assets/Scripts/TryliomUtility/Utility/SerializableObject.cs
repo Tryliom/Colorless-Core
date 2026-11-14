@@ -10,7 +10,7 @@ namespace TryliomUtility
 	{
 		[SerializeField]
 		private SerializableSystemType _systemType;
-		public object Value =>thrownull;
+		public object Value =>throw null;
 
 		// Stores the serialized version of Value
 		[SerializeField]
