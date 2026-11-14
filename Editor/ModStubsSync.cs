@@ -189,7 +189,17 @@ namespace ColorlessOdyssey
 
 				element.FindPropertyRelative("name").stringValue = data.sortingLayers[i].name;
 				element.FindPropertyRelative("uniqueID").longValue = data.sortingLayers[i].uniqueID;
-				element.FindPropertyRelative("locked").intValue = data.sortingLayers[i].locked;
+
+				var locked = element.FindPropertyRelative("locked");
+
+				if (locked.propertyType == SerializedPropertyType.Boolean)
+				{
+					locked.boolValue = data.sortingLayers[i].locked != 0;
+				}
+				else
+				{
+					locked.intValue = data.sortingLayers[i].locked;
+				}
 			}
 
 			tagManager.ApplyModifiedProperties();
