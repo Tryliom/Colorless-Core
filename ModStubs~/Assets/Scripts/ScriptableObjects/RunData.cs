@@ -59,7 +59,10 @@ public class RunData : ScriptableObject
     public List<Relic> DebugRelics ;
 
     private IEnumerable<Relic> GetRelicOptions()
-{throw new System.NotImplementedException();}
+    {
+        return RelicData ? RelicData.GetAllRelics() : Enumerable.Empty<Relic>();
+    }
+
     public List<Collectible> DebugCollectiblesInInventory ;
     public List<GameObject> DebugItemsSpawned ;
     public int DebugStartGold;

@@ -48,7 +48,19 @@ public class PullEnemiesSettings
 
     /// <summary>Returns a shallow copy of these settings.</summary>
     public PullEnemiesSettings Clone()
-{throw new System.NotImplementedException();}
+    {
+        return new PullEnemiesSettings
+        {
+            PullingDuration = PullingDuration,
+            PullingForce = PullingForce,
+            SpeedThreshold = SpeedThreshold,
+            ForceMultiplierWithSize = ForceMultiplierWithSize,
+            CenterPullWeight = CenterPullWeight,
+            BackForceBoost = BackForceBoost,
+            FrontForceReduction = FrontForceReduction
+        };
+    }
+
     /// <summary>
     /// Applies the pull knockback to an enemy for a single frame.
     /// The <paramref name="sourceSpeed"/> is clamped to <see cref="SpeedThreshold"/> internally.
@@ -78,7 +90,16 @@ public class ReturnToSenderSettings
     
     /// <summary>Returns a copy of these settings.</summary>
     public ReturnToSenderSettings Clone()
-{throw new System.NotImplementedException();}}
+    {
+        return new ReturnToSenderSettings
+        {
+            InwardStrength = InwardStrength,
+            TangentialStrength = TangentialStrength,
+            MinDistanceToSender = MinDistanceToSender,
+            OverrideSpeed = OverrideSpeed
+        };
+    }
+}
 
 /// <summary>
 /// All configurable settings that can be applied to a spawned projectile.
@@ -159,7 +180,38 @@ public class ProjectileSettings
 {throw new System.NotImplementedException();}
     /// <summary>Returns a copy of these settings.</summary>
     public ProjectileSettings Clone()
-{throw new System.NotImplementedException();}}
+    {
+        return new ProjectileSettings
+        {
+            Id = Id,
+            Speed = Speed,
+            LifeTime = LifeTime,
+            Knockback = Knockback,
+            BaseDamage = BaseDamage,
+            AdditionalStats = new StatsData(AdditionalStats),
+            StatsOverTime = new List<StatOverTime>(StatsOverTime),
+            EffectsOnHit = new List<EffectOnHit>(EffectsOnHit),
+            AoeOnHit = new List<AoeOnHit>(AoeOnHit),
+            OverrideDamageType = OverrideDamageType,
+            DamageType = DamageType,
+            ChanceToApplyEffect = ChanceToApplyEffect,
+            EffectStacks = EffectStacks,
+            StuckOnEnemies = StuckOnEnemies,
+            StaticLatentHoming = StaticLatentHoming,
+            LatentHomingWaitTime = LatentHomingWaitTime,
+            StopHomingAfterLatentLaunch = StopHomingAfterLatentLaunch,
+            AoeLineSpawner = AoeLineSpawner,
+            AoeType = AoeType,
+            AoeLineDurationBeforeLaunch = AoeLineDurationBeforeLaunch,
+            PullEnemies = PullEnemies,
+            PullEnemiesSettings = PullEnemiesSettings?.Clone(),
+            Trajectory = Trajectory,
+            TrajectorySettings = TrajectorySettings?.Clone(),
+            ReturnToSender = ReturnToSender,
+            ReturnToSenderSettings = ReturnToSenderSettings?.Clone()
+        };
+    }
+}
 
 /// <summary>Settings defining a custom angular trajectory applied over the projectile lifetime.</summary>
 [Serializable]
@@ -176,7 +228,16 @@ public class TrajectorySettings
 
     /// <summary>Returns a copy of these settings.</summary>
     public TrajectorySettings Clone()
-{throw new System.NotImplementedException();}}
+    {
+        return new TrajectorySettings
+        {
+            Trajectory = new AnimationCurve(Trajectory.keys),
+            TrajectoryTime = TrajectoryTime,
+            TrajectoryRandomMultiplier = TrajectoryRandomMultiplier,
+            DoNotUseSignRandomization = DoNotUseSignRandomization
+        };
+    }
+}
 
 /// <summary>Settings used to spawn a burst of projectiles in a circle when the carrier projectile is destroyed.</summary>
 [Serializable]
@@ -192,7 +253,16 @@ public class ConcentratedProjectileSettings
 
     /// <summary>Returns a copy of these settings.</summary>
     public ConcentratedProjectileSettings Clone()
-{throw new System.NotImplementedException();}}
+    {
+        return new ConcentratedProjectileSettings
+        {
+            Amount = Amount,
+            CopyFromSource = CopyFromSource,
+            DamagePercentage = DamagePercentage,
+            Settings = Settings.Clone()
+        };
+    }
+}
 
 [Serializable]
 public class ProjectileOverTimeSettings
@@ -214,7 +284,21 @@ public class ProjectileOverTimeSettings
 
 	/// <summary>Returns a copy of these settings.</summary>
 	public ProjectileOverTimeSettings Clone()
-{throw new System.NotImplementedException();}}
+	{
+		return new ProjectileOverTimeSettings
+		{
+			DisabledInRoomClear = DisabledInRoomClear,
+			SpawnInterval = SpawnInterval,
+			RandomizeSpawnAngle = RandomizeSpawnAngle,
+			TargetNearestEnemy = TargetNearestEnemy,
+			SpawnAngleIncrease = SpawnAngleIncrease,
+			Amount = Amount,
+			BaseDamage = BaseDamage,
+			DamagePercentage = DamagePercentage,
+			Settings = Settings.Clone()
+		};
+	}
+}
 
 /// <summary>
 /// Settings for a single ray "glued" to a projectile: it follows the projectile's position, rotation and scale every
@@ -253,7 +337,29 @@ public class ProjectileAttachedRaySettings
 
     /// <summary>Returns a copy of these settings.</summary>
     public ProjectileAttachedRaySettings Clone()
-{throw new System.NotImplementedException();}}
+    {
+        return new ProjectileAttachedRaySettings
+        {
+            Type = Type,
+            RayControlType = RayControlType,
+            RayInstantSettings = new RayInstantSettings
+            {
+                LifeTime = RayInstantSettings.LifeTime
+            },
+            RayGrowSettings = new RayGrowSettings
+            {
+                RotationSpeed = RayGrowSettings.RotationSpeed,
+                GrowSpeed = RayGrowSettings.GrowSpeed
+            },
+            MaxScaleX = MaxScaleX,
+            AttackPerSeconds = AttackPerSeconds,
+            DamageRatio = DamageRatio,
+            PositionOffset = PositionOffset,
+            RotationOffset = RotationOffset,
+            AdditionalStats = new StatsData(AdditionalStats)
+        };
+    }
+}
 
 public class Projectile : MonoBehaviour
 {
@@ -457,10 +563,21 @@ public class Projectile : MonoBehaviour
     [SerializeField] private StatsData _baseStats;
     
     // Odin
-    private bool HasDamageTypeAnEffect =>throw null;
-    private bool ShowRotationMaxMultiplier =>throw null;
-    private bool ShowCircularFollow =>throw null;
-    private bool ShowCircularFollowSettings =>throw null;
+    private bool HasDamageTypeAnEffect => _damageType != DamageType.Typeless && _damageType != DamageType.Normal && _damageType != DamageType.Soul;
+    private bool ShowRotationMaxMultiplier => _increaseRotationOverTime && _rotate;
+    private bool ShowCircularFollow => _circularFollow || _followPlayer;
+    private bool ShowCircularFollowSettings => _circularFollow || _followPlayer && _circularFollow;
+    
+    // Current damage type
+    private DamageType _currentDamageType;
+    private float _currentChanceToApplyEffect;
+    private int _currentEffectStacks;
+
+    // Return to sender
+    private bool _returnToSenderActive;
+    private ReturnToSenderSettings _returnToSenderActiveSettings;
+    
+    private Transform _senderTransform;
 
     public void Reset()
 {throw new System.NotImplementedException();}    
@@ -704,14 +821,24 @@ public class Projectile : MonoBehaviour
     public int GetDefaultEffectStacks()
 {throw new System.NotImplementedException();}    
     public void OverrideDamageType(DamageType damageType, float chanceToApplyEffect = 0f, int effectStacks = 0)
-{throw new System.NotImplementedException();}
+    {
+        _currentDamageType = damageType;
+        _currentChanceToApplyEffect = chanceToApplyEffect;
+        _currentEffectStacks = effectStacks;
+    }
+
     /// <summary>
     /// Enables the return-to-sender behavior on this projectile: once its lifetime expires, it will curve back toward the
     /// sender and get destroyed on contact with it. When settings are provided they will be used; otherwise the default
     /// inspector settings are applied. Must be called before the first <see cref="OnUpdate"/> frame.
     /// </summary>
     public void ReturnToSender(Transform sender, ReturnToSenderSettings settings = null)
-{throw new System.NotImplementedException();}
+    {
+        _returnToSenderActive = true;
+        _returnToSenderActiveSettings = settings != null ? settings.Clone() : _defaultReturnToSenderSettings.Clone();
+        _senderTransform = sender;
+    }
+
     /// <summary>Returns whether the return-to-sender behavior is currently active on this projectile.</summary>
     public bool IsReturnToSenderActive()
 {throw new System.NotImplementedException();}

@@ -55,7 +55,7 @@ public struct TextDisplay
     public bool UseIconText;
     [FormerlySerializedAs("UILocalizationName")] public string StatLocalizationName;
     
-    private bool ShouldShowIcon =>throw null;
+    private bool ShouldShowIcon => UseIcon && Icons.Count == 0;
 }
 
 public class TextGenerator : MonoBehaviour

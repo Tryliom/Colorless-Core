@@ -169,7 +169,10 @@ public class Pattern
     public bool IsConditionMet()
 {throw new System.NotImplementedException();}
     private bool HideTargetSearchType()
-{throw new System.NotImplementedException();}
+    {
+        return TargetType is TargetType.None or TargetType.Self;
+    }
+
     protected virtual bool CheckConditions()
 {throw new System.NotImplementedException();}
     protected virtual void SetupStrategy()

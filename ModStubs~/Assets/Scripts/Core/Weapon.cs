@@ -161,7 +161,10 @@ public class WeaponProjectileSettings
     public ReturnToSenderSettings ReturnToSenderSettings ;
 
     public ProjectileId GetProjectileId()
-{throw new System.NotImplementedException();}}
+    {
+        return string.IsNullOrEmpty(Id.Value) ? ProjectileIds.None : Id;
+    }
+}
 
 [Serializable]
 public class WeaponAoeSettings
@@ -224,9 +227,12 @@ public class WeaponMeleeSettings
     public WeaponMeleeSettings Clone()
 {throw new System.NotImplementedException();}    
     public ProjectileId GetProjectileId()
-{throw new System.NotImplementedException();}    
+    {
+        return string.IsNullOrEmpty(Id.Value) ? ProjectileIds.None : Id;
+    }
+    
     // Odin
-    private bool HasDamageTypeAnEffect =>throw null;
+    private bool HasDamageTypeAnEffect => DamageType != DamageType.Typeless && DamageType != DamageType.Normal && DamageType != DamageType.Soul && OverrideDamageType;
 }
 
 [Serializable]
@@ -345,7 +351,7 @@ public class WeaponShootSettings
     public ShootSettings ShootSettings ;
     
     // Odin
-    private bool HasMoreThanOneShoot =>throw null;
+    private bool HasMoreThanOneShoot => ShootNumber.MaxValue > 1;
 }
 
 [Serializable]
@@ -370,6 +376,10 @@ public class ShootSettings
     
     [BoolTitle,Foldout("Projectile type"),ShowIf(nameof(CanOverrideDamageType))]
     public bool OverrideDamageType;
+    [ShowIf(nameof(CanOverrideDamageType)),ShowNonSerializedField]
+    [HideLabel]
+    [Tab("Projectile type")]
+    private string _damageType;
     [ShowIf(nameof(OverrideDamageType)),Foldout("Projectile type")]
     public DamageType DamageType ;
     [Tooltip("Chance to apply effect linked to the damage type"),ShowIf(nameof(HasDamageTypeAnEffect)),Foldout("Projectile type")]
@@ -453,11 +463,68 @@ public class ShootSettings
     public StatsData AdditionalStats;
     
     // Odin conditional fields
-    private bool IsCustomRotation() {throw new System.NotImplementedException();}    private bool IsProjectileWeapon() {throw new System.NotImplementedException();}    private bool IsRayWeapon() {throw new System.NotImplementedException();}    private bool IsAoeWeapon() {throw new System.NotImplementedException();}    private bool IsSummonWeapon() {throw new System.NotImplementedException();}    private bool IsNotMeleeWeaponOnly() {throw new System.NotImplementedException();}    private bool HasDamageTypeAnEffect =>throw null;
-    private bool CanOverrideDamageType =>throw null;
+    private bool IsCustomRotation() => RotationAnimationType == WeaponRotationAnimationType.Custom;
+    private bool IsProjectileWeapon() => WeaponProjectileType == WeaponProjectileType.Projectile;
+    private bool IsRayWeapon() => WeaponProjectileType == WeaponProjectileType.Ray;
+    private bool IsAoeWeapon() => WeaponProjectileType == WeaponProjectileType.Aoe;
+    private bool IsSummonWeapon() => WeaponProjectileType == WeaponProjectileType.Summon;
+    private bool IsNotMeleeWeaponOnly() => WeaponProjectileType != WeaponProjectileType.None || !UseMelee;
+    private bool HasDamageTypeAnEffect => DamageType != DamageType.Typeless && DamageType != DamageType.Normal && DamageType != DamageType.Soul && OverrideDamageType;
+    private bool CanOverrideDamageType => WeaponProjectileType is not WeaponProjectileType.None and not WeaponProjectileType.Summon;
 
     private void UpdateDamageTypeDescription()
-{throw new System.NotImplementedException();}}
+    { 
+	    _damageType = "";
+	    
+	    if (WeaponProjectileType == WeaponProjectileType.None || OverrideDamageType || !CanOverrideDamageType) return;
+
+	    _damageType = "Default Damage Type: ";
+
+	    switch (WeaponProjectileType)
+	    {
+		    case WeaponProjectileType.Projectile:
+		    {
+			    var proj = RunData.Asset.PrefabData.GetProjectilePrefab(ProjectileSettings.GetProjectileId());
+			    var chance = proj.GetDefaultChanceToApplyEffect();
+			    
+			    _damageType += proj.GetDefaultDamageType().ToString();
+
+			    if (chance > 0f)
+			    {
+				    _damageType += " | " + chance + "% chance to apply effect with " + proj.GetDefaultEffectStacks() + " stacks";
+			    }
+			    
+			    break;
+		    }
+		    case WeaponProjectileType.Ray:
+		    {
+			    var proj = RunData.Asset.PrefabData.GetRayPrefab(RaySettings.Type);
+			    var chance = proj.GetDefaultChanceToApplyEffect();
+			    
+			    _damageType += proj.GetDefaultDamageType().ToString();
+
+			    if (chance > 0f)
+			    {
+				    _damageType += " | " + chance + "% chance to apply effect with " + proj.GetDefaultEffectStacks() + " stacks";
+			    }
+			    break;
+		    }
+		    case WeaponProjectileType.Aoe:
+		    {
+			    var proj = RunData.Asset.PrefabData.GetAoePrefab(AoeSettings.Type);
+			    var chance = proj.GetDefaultChanceToApplyEffect();
+			    
+			    _damageType += proj.GetDefaultDamageType().ToString();
+
+			    if (chance > 0f)
+			    {
+				    _damageType += " | " + chance + "% chance to apply effect with " + proj.GetDefaultEffectStacks() + " stacks";
+			    }
+			    break;
+		    }
+	    }
+    }
+}
 
 public class Weapon : MonoBehaviour
 {
@@ -468,6 +535,8 @@ public class Weapon : MonoBehaviour
     
     [Title("Mana Weapon")]
     [SerializeField] private bool _isManaWeapon;
+
+    private RunData RunData => RunData.Asset;
     [Tooltip("Offset from player applied ignoring the weapon rotation")]
     public Vector2 FixedOffsetFromPlayer;
     
@@ -526,6 +595,10 @@ public class Weapon : MonoBehaviour
     {
         get
 =>throw null;    }
+    
+    // Shoot settings management
+    private WeaponShootSettings _currentWeaponShootSettings;
+    private ShootSettings _shootSetting;
     public List<Sprite> OriginalSpritesPerLevel { get; } 
     /// <summary>Reference duration of the running cooldown: the one applied after skipping shots if any, otherwise the current max cooldown.</summary>
     public float GetCooldownReference()
@@ -616,7 +689,12 @@ public class Weapon : MonoBehaviour
     public WeaponData ToWeaponData()
 {throw new System.NotImplementedException();}    
     public ProjectileId GetProjectileId()
-{throw new System.NotImplementedException();}    
+    {
+        var projectileId = _shootSetting.ProjectileSettings.GetProjectileId();
+
+        return projectileId == ProjectileIds.None ? _shootSetting.MeleeSettings.GetProjectileId() : projectileId;
+    }
+    
     public bool IsShootingParticleDisabled()
 {throw new System.NotImplementedException();}    
     public bool IsRayGrowWeapon()
@@ -774,7 +852,10 @@ public class Weapon : MonoBehaviour
     public float GetAverageApsMultiplier()
 {throw new System.NotImplementedException();}    
     public bool UseAmmo()
-{throw new System.NotImplementedException();}    
+	{
+		return _currentWeaponShootSettings.UseAmmo;
+	}
+    
     /**
      * Calculate the current ammo used in the current magazine, is decremented at the end of the cooldown of each shoot
      */

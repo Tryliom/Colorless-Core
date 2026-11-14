@@ -33,6 +33,8 @@ public class Aoe : MonoBehaviour
     
     [Title("Damage settings")]
     [SerializeField] private bool _noDamage;
+    [SerializeField,HideIf(nameof(_noDamage))]
+    private DamageType _damageType ;
 
     [SerializeField,Space]
     private bool _pullEnemiesOnHit;
@@ -47,7 +49,7 @@ public class Aoe : MonoBehaviour
     [SerializeField] private bool _pulseColor;
     
     // Odin
-    private bool HasDamageTypeAnEffect =>throw null;
+    private bool HasDamageTypeAnEffect => _damageType != DamageType.Typeless && _damageType != DamageType.Normal && _damageType != DamageType.Soul;
     
     public AoeType AoeType =>throw null;
 

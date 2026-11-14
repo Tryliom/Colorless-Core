@@ -13,7 +13,12 @@ public class RelicSelector : GroundItem
 
     protected RunData RunData =>throw null;
     
-    private bool HasThemeColor =>throw null;
+    [Header("Relic Selector Settings")]
+    [SerializeField]
+    [EnumToggleButtons]
+    private RelicType _type;
+    
+    private bool HasThemeColor => _type is RelicType.Boss or RelicType.Altar;
     
     public override CollectibleType GetCollectibleType() {throw new System.NotImplementedException();}    public ObjectLauncher ObjectLauncher =>throw null;
     protected List<string> AvailableRelicsIds ;

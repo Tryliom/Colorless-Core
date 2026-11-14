@@ -15,7 +15,7 @@ public class PatternConditions
 	public List<PatternConditionBase> Conditions ;
 	
 	// Odin
-	private bool ShowIfConditions =>throw null;
+	private bool ShowIfConditions => Conditions.Count > 1;
 
 	public bool IsMet(Pattern currentPattern, bool duringExecution)
 {throw new System.NotImplementedException();}

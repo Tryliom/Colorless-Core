@@ -54,7 +54,7 @@ public class AoeOnHit
     public float ProjectileDamageRatio;
     
     // Odin
-    private bool CanShowScaleDistance =>throw null;
+    private bool CanShowScaleDistance => RandomRadiusAround > 0;
 }
 
 public enum OnHitSource

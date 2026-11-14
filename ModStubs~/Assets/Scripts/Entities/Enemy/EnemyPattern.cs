@@ -46,14 +46,25 @@ public class EnemyPattern : MonoBehaviour
     [Title("Patterns")]
     [SerializeReference,OnValueChanged("OnPatternsChanged")]
     public List<Pattern> NoTargetPatterns;
+    [SerializeField]
+    private List<CombinedPattern> _combinedPatterns ;
 
     private IEnumerable<ValueDropdownItem> GetCombinedPatternIndices()
-{throw new System.NotImplementedException();}    
+    {
+        return _combinedPatterns.Select((t, i) => new ValueDropdownItem(t.Name, i));
+    }
+    
     // Odin
-    private bool DisplayBossType =>throw null;
+    private bool DisplayBossType => EnemyType == EnemyType.Boss;
 
     private void OnPatternsChanged()
-{throw new System.NotImplementedException();}    
+    {
+        foreach (var pattern in NoTargetPatterns)
+        {
+            pattern.UpdateActionType();
+        }
+    }
+    
     [HideInInspector] public bool IsControlledByPlayer;
     public bool WasSummonedByWeapon { private set; get; }
     public WeaponName SummonedByWeaponName { private set; get; }
