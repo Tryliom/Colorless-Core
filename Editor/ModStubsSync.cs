@@ -12,6 +12,7 @@ namespace ColorlessOdyssey
 		private const string StubsFolder = "ModStubs~";
 		private const string TargetFolder = "Assets/ModSDK";
 		private const string GameMarkerFile = "Assets/Scripts/Core/Projectile.cs";
+		private const string SettingsFile = "ProjectSettings.json";
 
 		[MenuItem("Tools/Colorless Core/Sync Mod Stubs")]
 		public static void Sync()
@@ -52,8 +53,72 @@ namespace ColorlessOdyssey
 
 			var count = CopyDirectory(source, target);
 
+			ApplyProjectSettings(Path.Combine(source, SettingsFile));
 			AssetDatabase.Refresh();
 			Debug.Log($"[ModStubsSync] {count} files copied to {TargetFolder}.");
+		}
+
+		[System.Serializable]
+		private class SortingLayerData
+		{
+			public string name;
+			public long uniqueID;
+			public int locked;
+		}
+
+		[System.Serializable]
+		private class ProjectSettingsData
+		{
+			public string[] tags;
+			public string[] layers;
+			public SortingLayerData[] sortingLayers;
+		}
+
+		/// <summary>Mirrors the game's tags, layers and sorting layers so the mod project uses the same indices and IDs.</summary>
+		private static void ApplyProjectSettings(string settingsPath)
+		{
+			if (!File.Exists(settingsPath))
+			{
+				Debug.LogWarning($"[ModStubsSync] {SettingsFile} not found, tags and layers were not synced.");
+
+				return;
+			}
+
+			var data = JsonUtility.FromJson<ProjectSettingsData>(File.ReadAllText(settingsPath));
+			var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+
+			var tags = tagManager.FindProperty("tags");
+
+			tags.arraySize = data.tags.Length;
+
+			for (var i = 0; i < data.tags.Length; i++)
+			{
+				tags.GetArrayElementAtIndex(i).stringValue = data.tags[i];
+			}
+
+			var layers = tagManager.FindProperty("layers");
+
+			for (var i = 0; i < data.layers.Length && i < layers.arraySize; i++)
+			{
+				layers.GetArrayElementAtIndex(i).stringValue = data.layers[i];
+			}
+
+			var sortingLayers = tagManager.FindProperty("m_SortingLayers");
+
+			sortingLayers.arraySize = data.sortingLayers.Length;
+
+			for (var i = 0; i < data.sortingLayers.Length; i++)
+			{
+				var element = sortingLayers.GetArrayElementAtIndex(i);
+
+				element.FindPropertyRelative("name").stringValue = data.sortingLayers[i].name;
+				element.FindPropertyRelative("uniqueID").longValue = data.sortingLayers[i].uniqueID;
+				element.FindPropertyRelative("locked").intValue = data.sortingLayers[i].locked;
+			}
+
+			tagManager.ApplyModifiedProperties();
+			AssetDatabase.SaveAssets();
+			Debug.Log($"[ModStubsSync] Synced {data.tags.Length} tags, layers and {data.sortingLayers.Length} sorting layers.");
 		}
 
 		private static int CopyDirectory(string source, string target)
@@ -64,6 +129,11 @@ namespace ColorlessOdyssey
 
 			foreach (var file in Directory.GetFiles(source))
 			{
+				if (Path.GetFileName(file) == SettingsFile)
+				{
+					continue;
+				}
+
 				File.Copy(file, Path.Combine(target, Path.GetFileName(file)), true);
 				count++;
 			}
