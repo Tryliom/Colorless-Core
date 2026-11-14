@@ -15,7 +15,7 @@ public class Poison : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Poison() : base(EffectType.Debuff, 5, true, -1) {throw new System.NotImplementedException();}
+    public Poison() : base(EffectType.Debuff, 5, true, -1) {}
     protected override void OnAttachToGameObject(SourceOrigin _)
 {throw new System.NotImplementedException();}
     public override void Update(float deltaTime)

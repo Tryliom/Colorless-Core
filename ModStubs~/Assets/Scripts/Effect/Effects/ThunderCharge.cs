@@ -19,6 +19,6 @@ public class ThunderCharge : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public ThunderCharge() : base(EffectType.Buff, -1, true, 20, false, true) {throw new System.NotImplementedException();}
+    public ThunderCharge() : base(EffectType.Buff, -1, true, 20, false, true) {}
     public override void Update(float deltaTime)
 {throw new System.NotImplementedException();}}

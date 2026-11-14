@@ -27,7 +27,7 @@ public class Data : ISerializationCallbackReceiver
 	[SerializeField] 
 	private SerializableObjectDictionary _serializedObjects ;
 
-	public Data() {throw new System.NotImplementedException();}
+	public Data() {}
 	/**
 	 * Retrieve the data from the target, only for fields with the SaveData attribute, and save them in a dictionary with the field name as key and the value as value
 	 */

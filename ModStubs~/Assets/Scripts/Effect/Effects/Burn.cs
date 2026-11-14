@@ -20,7 +20,7 @@ public class Burn : Effect
 {
 	// Convention: every effect must have this static method
 	public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}	
-    public Burn() : base(EffectType.Debuff, 5, true, 10) {throw new System.NotImplementedException();}
+    public Burn() : base(EffectType.Debuff, 5, true, 10) {}
     protected override void OnAttachToGameObject(SourceOrigin _)
 {throw new System.NotImplementedException();}
     public override void Update(float deltaTime)

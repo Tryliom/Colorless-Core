@@ -14,6 +14,6 @@ public class CosmicRadiation : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public CosmicRadiation() : base(EffectType.Debuff, -1, true, -1) {throw new System.NotImplementedException();}
+    public CosmicRadiation() : base(EffectType.Debuff, -1, true, -1) {}
     public override void Update(float deltaTime)
 {throw new System.NotImplementedException();}}

@@ -19,7 +19,7 @@ public class Acid : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Acid() : base(EffectType.Debuff, 5, true, -1) {throw new System.NotImplementedException();}
+    public Acid() : base(EffectType.Debuff, 5, true, -1) {}
     public override void OnAdd()
 {throw new System.NotImplementedException();}
     protected override void OnExpire()

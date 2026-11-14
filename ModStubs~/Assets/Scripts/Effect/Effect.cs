@@ -131,46 +131,46 @@ public class Invulnerable : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Invulnerable(float duration) : base(EffectType.Buff, duration, isStoreBetweenRooms: true) {throw new System.NotImplementedException();}}
+    public Invulnerable(float duration) : base(EffectType.Buff, duration, isStoreBetweenRooms: true) {}}
 
 [Serializable]
 public class KnockbackResistance : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public KnockbackResistance(float duration) : base(EffectType.Buff, duration) {throw new System.NotImplementedException();}}
+    public KnockbackResistance(float duration) : base(EffectType.Buff, duration) {}}
 
 [Serializable]
 public class Charmed : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Charmed(float duration) : base(EffectType.Debuff, duration) {throw new System.NotImplementedException();}}
+    public Charmed(float duration) : base(EffectType.Debuff, duration) {}}
 
 [Serializable]
 public class MindControl : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public MindControl(float duration) : base(EffectType.Debuff, duration) {throw new System.NotImplementedException();}}
+    public MindControl(float duration) : base(EffectType.Debuff, duration) {}}
 
 [Serializable]
 public class StarFragment : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public StarFragment() : base(EffectType.Neutral, -1, true, -1) {throw new System.NotImplementedException();}}
+    public StarFragment() : base(EffectType.Neutral, -1, true, -1) {}}
 
 [Serializable]
 public class Target : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Target(float duration = 5f) : base(EffectType.Debuff, duration) {throw new System.NotImplementedException();}}
+    public Target(float duration = 5f) : base(EffectType.Debuff, duration) {}}
 
 [Serializable]
 public class GoldRush : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public GoldRush(float duration = 5f) : base(EffectType.Debuff, duration) {throw new System.NotImplementedException();}}
+    public GoldRush(float duration = 5f) : base(EffectType.Debuff, duration) {}}

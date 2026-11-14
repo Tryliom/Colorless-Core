@@ -6,7 +6,7 @@ using UnityEngine;
 public class TimeStorage
 {
 
-    public TimeStorage() {throw new System.NotImplementedException();}
+    public TimeStorage() {}
     public TimeStorage(float time)
 {throw new System.NotImplementedException();}
     public void Update()

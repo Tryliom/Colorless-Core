@@ -14,7 +14,7 @@ public class Decay : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Decay() : base(EffectType.Debuff, 3, true, 10) {throw new System.NotImplementedException();}    
+    public Decay() : base(EffectType.Debuff, 3, true, 10) {}    
     public override void OnAdd()
 {throw new System.NotImplementedException();}
     protected override void OnExpire()

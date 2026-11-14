@@ -52,7 +52,7 @@ public class StructureData
 	public Vector3 Position;
 	public Data Data;
 		
-	public StructureData() {throw new System.NotImplementedException();}		
+	public StructureData() {}		
 	public StructureData(Structure structure)
 {throw new System.NotImplementedException();}}
 

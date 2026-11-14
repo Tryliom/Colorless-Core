@@ -231,7 +231,7 @@ public class StatsData
 {throw new System.NotImplementedException();}
     public static void SetFieldValue(StatFieldInfo info, StatsData instance, float value)
 {throw new System.NotImplementedException();}
-    public StatsData() {throw new System.NotImplementedException();}
+    public StatsData() {}
     public StatsData(StatsData copyFrom)
 {throw new System.NotImplementedException();}
     public float GetFinalSpeed()
