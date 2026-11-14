@@ -71,28 +71,53 @@ public enum TargetSearchType
 [Serializable]
 public class Pattern
 {
+	
+    [Tab("Action parameters")]
     public TargetType TargetType;
+    [HideIf(nameof(HideTargetSearchType))]
+    [Tab("Action parameters")]
     public List<TargetSearchType> TargetSearchType ;
+    [Tab("Action parameters")]
     public float TargetAroundRadius;
+    [EnumToggleButtons]
+    [Tab("Action parameters")]
     public CheckType CheckType;
+    [Tab("Action parameters")]
     public float AnimationSpeed ;
+    
+    [Tab(ConditionsTab)]
     public bool UseCondition;
+    [ShowIf(nameof(UseCondition))]
+    [Tab(ConditionsTab),ListDrawerSettings(ShowFoldout = false)]
     public List<PatternConditions> Conditions ;
-    [Tooltip("If true, the pattern will stop if the condition is no longer met during the pattern execution.")]
+    [ShowIf(nameof(UseCondition)),Tooltip("If true, the pattern will stop if the condition is no longer met during the pattern execution.")]
+    [Tab(ConditionsTab)]
     public bool CheckConditionsDuringExecution;
     [Tooltip("Is it linked to the next and how")] 
+    [EnumToggleButtons]
+    [Tab(ConditionsTab)]
     public Link NextLinkCondition;
     [FormerlySerializedAs("ExecuteAnds"),Tooltip("Will execute all the next patterns with AND link instantly")]
+    [Tab(ConditionsTab)]
     public bool ExecuteNextPatterns;
+    [Tab(ConditionsTab)]
     public bool StopExecutingNextPatterns;
+    [ShowIf(nameof(UseCondition))]
+    [Tab(ConditionsTab)]
     public bool LoopIfConditionMet;
-    [Tooltip("0 = no max loops")]
+    [ShowIf(nameof(LoopIfConditionMet)),Tooltip("0 = no max loops")]
+    [Tab(ConditionsTab)]
     public int MaxLoops;
+    
+    [Tab("Animation")]
     public bool StartAttackAnimation;
+    [Tab("Animation")]
     public bool StopAttackAnimation;
+    [Tab("Animation")]
     public bool DoNotStopAttackAnimation;
     
     [SerializeReference,Tooltip("Patterns triggered while this one is executing. They never drive the animations.")]
+    [Tab("Parallel"),ListDrawerSettings(HideReferenceObjectPicker = true)]
     public List<ParallelPatternEntry> ParallelPatterns ;
     
     [HideInInspector] public ActionType ActionType;

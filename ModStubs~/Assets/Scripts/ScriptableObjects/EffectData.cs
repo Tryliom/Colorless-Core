@@ -6,9 +6,18 @@ using UnityEngine;
 [Serializable]
 public class EffectIcon
 {
+    [ShowAssetPreview,Required]
+    [HideLabel]
+    [HorizontalGroup("First")]
     public Sprite Icon;
+    [HideLabel]
+    [HorizontalGroup("First")]
     public Color Color ;
+    [HorizontalGroup("Second")]
     public bool UseParticle;
+    [ShowIf(nameof(UseParticle))]
+    [HideLabel]
+    [HorizontalGroup("Second")]
     public ParticleType ParticleType;
 }
 

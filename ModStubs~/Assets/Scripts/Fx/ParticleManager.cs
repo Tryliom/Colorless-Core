@@ -39,12 +39,14 @@ public class ParticleSystemSettings
 [Serializable]
 public class BurstExplosionSettings : ParticleSystemSettings
 {
+	[Title("Burst Explosion Settings")]
 	public float ExplosionRadius;
 	public float VelocityMultiplier ;
 	public int Particles ;
 	public float MinLifeTime ;
 	public float MaxLifeTime ;
 	public float ArcAngle ;
+	[HideIf(nameof(ArcAngle), 360f)]
 	public Vector2 ArcDirection;
 	
 	public new BurstExplosionSettings Clone()

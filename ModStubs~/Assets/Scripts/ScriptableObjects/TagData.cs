@@ -35,5 +35,7 @@ public class TagData : ScriptableObject
     public List<StatName> GetStats(Tag tag)
 {throw new System.NotImplementedException();}    
     public string GetDescription(Tag tag)
-{throw new System.NotImplementedException();}    public void FillMissingTags()
+{throw new System.NotImplementedException();}
+    [Button]
+    public void FillMissingTags()
 {throw new System.NotImplementedException();}}

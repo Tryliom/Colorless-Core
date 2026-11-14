@@ -11,6 +11,7 @@ public enum ComparisonCondition
 [Serializable]
 public class TagCondition
 {
+    [EnumToggleButtons]
     public ComparisonCondition Comparison;
     public List<Tag> Tags;
 }

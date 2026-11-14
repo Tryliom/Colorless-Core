@@ -10,7 +10,9 @@ using Random = UnityEngine.Random;
 public class ColorCondition
 {
     public bool ColorRestriction;
+    [ShowIf(nameof(ColorRestriction))]
     public ThemeColor ThemeColor;
+    [ShowIf(nameof(ColorRestriction))]
     public bool CanBeExotic;
 }
 
@@ -24,7 +26,10 @@ public enum ShopCondition
 [Serializable]
 public abstract class ShopItem
 {
+    [VerticalGroup("Info"),PropertyOrder(-10)]
     public int Weight;
+    [Label("Max Items")]
+    [VerticalGroup("Info"),PropertyOrder(-9)]
     public int MaxSoldPerRefill;
  
     public ColorCondition ColorCondition ;
@@ -113,6 +118,7 @@ public class RuneShopItem : ShopItem
 public class RelicShopItem : ShopItem
 {
     [SerializeField]
+    [VerticalGroup("Settings")]
     public CollectibleType RelicType ;
 
     public override void InitItem() {throw new System.NotImplementedException();}

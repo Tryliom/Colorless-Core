@@ -8,8 +8,10 @@ using UnityEngine;
 [Serializable]
 public class PatternConditions
 {
+	[ShowIf(nameof(ShowIfConditions))]
+	[EnumToggleButtons]
 	public ComparisonCondition Comparison;
-	[SerializeReference]
+	[SerializeReference,ListDrawerSettings(ShowFoldout = false)]
 	public List<PatternConditionBase> Conditions ;
 
 	public bool IsMet(Pattern currentPattern, bool duringExecution)

@@ -61,8 +61,11 @@ public enum RayControlType
 [Serializable]
 public class WeaponRaySettings
 {
+    [Title("Main Settings")]
     public RayType Type;
     public RayControlType RayControlType;
+    
+    [Title("Settings")]
     public RayInstantSettings RayInstantSettings;
     public RayGrowSettings RayGrowSettings;
     public StatsData Stats;
@@ -90,31 +93,71 @@ public class RayGrowSettings
 [Serializable]
 public class WeaponProjectileSettings
 {
+    [Title("Main Settings")]
     public ProjectileId Id;
     public ProjectileModifier ProjectileModifier ;
+    
+    [BoolTitle("Use Multiple"),Foldout("Use Multiple")]
     public bool UseMultiple;
+    [ShowIf(nameof(UseMultiple)),Foldout("Use Multiple")]
+    [InlineProperty]
     public MultipleProjectileSettings MultipleProjectileSettings;
+    
+    [Title("Turn around"),ShowIf(nameof(ProjectileModifier), ProjectileModifier.Orbiting)]
     [Tooltip("If false, will try to orbit around nearest entity")]
     public bool ForceOrbitToPlayer;
+    [ShowIf(nameof(ProjectileModifier), ProjectileModifier.Orbiting)]
     public float BaseRadius;
+    
+    [BoolTitle("Limited projectile number"),Foldout("Limited projectile number")]
     public bool LimitedProjectileNumber;
+    [ShowIf(nameof(LimitedProjectileNumber)),Foldout("Limited projectile number")]
     public int MaxProjectileNumber;
+    [ShowIf(nameof(LimitedProjectileNumber)),Foldout("Limited projectile number")]
     public bool AllowProjectileStats;
+    
+    [BoolTitle("Stuck on Enemies"),Foldout("Stuck on Enemies")]
     public bool StuckOnEnemies;
+    
+    [BoolTitle("Static Latent Homing"),Foldout("Static Latent Homing")]
     public bool StaticLatentHoming;
+    [ShowIf(nameof(StaticLatentHoming)),Foldout("Static Latent Homing")]
     public float LatentHomingWaitTime;
+    [ShowIf(nameof(StaticLatentHoming)),Foldout("Static Latent Homing")]
     public bool StopHomingAfterLatentLaunch;
+    
+    [BoolTitle("Aoe Line Spawner"),Foldout("Aoe Line Spawner")]
     public bool AoeLineSpawner;
+    [ShowIf(nameof(AoeLineSpawner)),Foldout("Aoe Line Spawner")]
     public AoeType AoeType;
+    
+    [BoolTitle("Pull Enemies"),Foldout("Pull Enemies")]
     public bool PullEnemies;
+    [ShowIf(nameof(PullEnemies)),Foldout("Pull Enemies")]
     public PullEnemiesSettings PullEnemiesSettings ;
+    
+    [BoolTitle("Trajectory"),Foldout("Trajectory")]
     public bool Trajectory;
+    [ShowIf(nameof(Trajectory)),Foldout("Trajectory")]
+    [InlineProperty]
     public TrajectorySettings TrajectorySettings ;
+    
+    [BoolTitle("Concentrated Projectile"),Foldout("Concentrated Projectile")]
     public bool ConcentratedProjectile;
+    [ShowIf(nameof(ConcentratedProjectile)),Foldout("Concentrated Projectile")]
+    [InlineProperty]
     public ConcentratedProjectileSettings ConcentratedProjectileSettings ;
+    
+    [BoolTitle("Projectile Over Time"),Foldout("Projectile Over Time")]
     public bool ProjectileOverTime;
+    [ShowIf(nameof(ProjectileOverTime)),Foldout("Projectile Over Time")]
+    [InlineProperty]
     public ProjectileOverTimeSettings ProjectileOverTimeSettings ;
+    
+    [BoolTitle("Return to Sender"),Foldout("Return to Sender")]
     public bool ReturnToSender;
+    [ShowIf(nameof(ReturnToSender)),Foldout("Return to Sender")]
+    [InlineProperty]
     public ReturnToSenderSettings ReturnToSenderSettings ;
 
     public ProjectileId GetProjectileId()
@@ -124,40 +167,56 @@ public class WeaponProjectileSettings
 public class WeaponAoeSettings
 {
     public AoeType Type;
+    
+    [BoolTitle("Radius Settings")]
     public bool Use2DRadius;
+    [ShowIf(nameof(Use2DRadius))]
     public Vector2 RadiusXRange;
+    [ShowIf(nameof(Use2DRadius))]
     public Vector2 RadiusYRange;
+    [HideIf(nameof(Use2DRadius))]
     public Vector2 RadiusRange;
     [Tooltip("Additional random radius space used if there is more than 1 projectile")]
     public float RadiusPerProjectile;
+    
+    [Title("Settings")]
     public float RandomDurationBeforeActivation;
     public bool ScaleDurationWithRadius;
     public Vector2 RandomScaleRange;
     
-    [Tooltip("Will use projectile lifetime and speed to make it follow an enemy")]
+    [BoolTitle,Tooltip("Will use projectile lifetime and speed to make it follow an enemy")]
     public bool FollowEnemy;
+    
+    [BoolTitle("Pull Enemies")]
     public bool PullEnemies;
+    [ShowIf(nameof(PullEnemies))]
     public PullEnemiesSettings PullEnemiesSettings ;
 }
 
 [Serializable]
 public class WeaponMeleeSettings
 {
+    [Title("Main Settings")]
     public ProjectileId Id;
+    
+    [BoolTitle]
     public bool OverrideDamageType;
+    [ShowIf(nameof(OverrideDamageType))]
     public DamageType DamageType ;
-    [Tooltip("Chance to apply effect linked to the damage type")]
+    [Tooltip("Chance to apply effect linked to the damage type"),ShowIf(nameof(HasDamageTypeAnEffect))]
     public float ChanceToApplyEffect;
-    [SerializeField]
+    [SerializeField,ShowIf(nameof(HasDamageTypeAnEffect))]
     public int EffectStacks ;
     
-    [Tooltip("This is the percentage of the damage of the weapon that will be applied to the melee projectile")]
+    [Title("Settings"),Tooltip("This is the percentage of the damage of the weapon that will be applied to the melee projectile")]
     public float DamagePercentage ;
     public float MinimumLifetime ;
     public float FixedLifetime;
     public bool SyncProjectileXWithWeapon;
     public float Knockback;
     [FormerlySerializedAs("AdditionalStats")] public StatsData Stats;
+    
+    [Title("Effects")]
     public List<StatOverTime> StatsOverTime ;
     public List<EffectOnHit> EffectsOnHit ;
     public List<AoeOnHit> AoeOnHit ;
@@ -240,88 +299,151 @@ public enum WeaponShootType
 [Serializable]
 public class WeaponShootSettings
 {
+
+    [Foldout("Conditions"),InfoBox("The number of shots that will use the shoot settings until the next shoot settings are applied")]
     public MinMaxRange<int> ShootNumber ;
-    [Range(0f, 1f)]
+    [Foldout("Conditions"),InfoBox("The chance to use the shoot settings, 1 means 100% chance, 0 means 0% chance"),Range(0f, 1f)]
     public float ChanceToUse ;
+
+    [Foldout("On Switch Settings")]
     public bool ResetRotationOrder ;
+    [Foldout("On Switch Settings")]
     public Vector3 ShootingPositionOffset ;
     
-    [Tooltip("If the last shoot will have a different APS, to induce a cooldown")]
+    [Tooltip("If the last shoot will have a different APS, to induce a cooldown"),ShowIf(nameof(HasMoreThanOneShoot))]
+    [HorizontalGroup("Last Aps")]
     public bool ApsOnLastShoot;
-    [Tooltip("The APS used for the last shoot")]
+    [ShowIf(nameof(ApsOnLastShoot)),Tooltip("The APS used for the last shoot")]
+    [HideLabel]
+    [HorizontalGroup("Last Aps")]
     public float LastShootAps ;
     
-    [Tooltip("If true, will shot automatically all the left shots. If previous one was also true and this one not charged, will continue.")]
+    [BoolTitle,Tooltip("If true, will shot automatically all the left shots. If previous one was also true and this one not charged, will continue.")]
     public bool UseAllShots;
 
-    [Tooltip("If this shoot settings use ammo, can be reloaded and which magazine it uses")]
+    [BoolTitle,Tooltip("If this shoot settings use ammo, can be reloaded and which magazine it uses")]
     public bool UseAmmo;
-    [Tooltip("Will increase the shoot number based on the ammo capacity of the weapon")]
+    [ShowIf(nameof(UseAmmo)),Tooltip("Will increase the shoot number based on the ammo capacity of the weapon")]
     public bool AffectedByAmmoCapacity ;
-    [Tooltip("Used to combine multiple shoot settings using the same magazine")]
+    [ShowIf(nameof(UseAmmo)),Tooltip("Used to combine multiple shoot settings using the same magazine")]
     public int MagazineNumber;
 
-    [Tooltip("Type of shooting mechanic used by the weapon")]
+    [Title("Shoot Type"),Tooltip("Type of shooting mechanic used by the weapon")]
     public WeaponShootType WeaponShootType;
-    [Tooltip("Time to fully charge the weapon in proportion of the attack speed")]
+    [ShowIf(nameof(WeaponShootType), WeaponShootType.Charged),Tooltip("Time to fully charge the weapon in proportion of the attack speed")]
     public float ChargeTimeRatio ;
-    [Tooltip("Will only charge the first shot, the rest will be normal shots")]
+    [ShowIf(nameof(WeaponShootType), WeaponShootType.Charged),Tooltip("Will only charge the first shot, the rest will be normal shots")]
     public bool OnlyChargeOnce;
-    [Tooltip("Allow the weapon to be fired before being fully charged with boosted stats (in WeaponData)")]
+    [ShowIf(nameof(WeaponShootType), WeaponShootType.Charged),Tooltip("Allow the weapon to be fired before being fully charged with boosted stats (in WeaponData)")]
     public bool CanPerfectTiming;
+    
+    [Foldout("Settings")]
+    [InlineProperty]
     public ShootSettings ShootSettings ;
 }
 
 [Serializable]
 public class ShootSettings
 {
+    [OnValueChanged(nameof(UpdateDamageTypeDescription))]
+    [Tab("Projectile type")]
     public WeaponProjectileType WeaponProjectileType ;
+    [Tab("Projectile type")]
     public WeaponSelfKnockbackType SelfKnockbackType ;
+    
+    [Tab("Projectile type")]
     public bool OverrideWeaponSound;
+    [ShowIf(nameof(OverrideWeaponSound)),ValueDropdown("SoundEnumDropdown.GetValues")]
+    [Tab("Projectile type")]
     public SoundEnum WeaponSound;
+    
+    [Tab("Projectile type")]
     public bool DisableShootParticles;
+    [Tab("Projectile type")]
     public bool UseMelee;
+    
+    [BoolTitle,Foldout("Projectile type"),ShowIf(nameof(CanOverrideDamageType))]
     public bool OverrideDamageType;
+    [ShowIf(nameof(OverrideDamageType)),Foldout("Projectile type")]
     public DamageType DamageType ;
-    [Tooltip("Chance to apply effect linked to the damage type")]
+    [Tooltip("Chance to apply effect linked to the damage type"),ShowIf(nameof(HasDamageTypeAnEffect)),Foldout("Projectile type")]
     public float ChanceToApplyEffect;
-    [SerializeField]
+    [SerializeField,ShowIf(nameof(HasDamageTypeAnEffect)),Foldout("Projectile type")]
     public int EffectStacks ;
+    
+    [Tab("Rotation Animation")]
     public WeaponRotationAnimationType RotationAnimationType ;
     [Tooltip("If true, the weapon will start with the rotation of the attack rotation curve, otherwise it will start with the reverse rotation")]
+    [Tab("Rotation Animation")]
     public bool UseStartRotationByDefault ;
-    [Tooltip("This will be used to rotate the weapon when attacking, then do it at reverse the second time")]
+    [ShowIf(nameof(IsCustomRotation)),Foldout("Rotation Animation"),Tooltip("This will be used to rotate the weapon when attacking, then do it at reverse the second time")]
     public AnimationCurve AttackRotationCurve;
+    [ShowIf(nameof(IsCustomRotation)),Foldout("Rotation Animation")]
     public float InAnimationRadiusMultiplier;
+    
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Foldout("Effects")]
     public List<StatOverTime> StatsOverTime ;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Foldout("Effects")]
     public List<EffectOnHit> EffectsOnHit ;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Foldout("Effects")]
     public List<AoeOnHit> AoeOnHit ;
+    
+    [BoolTitle("Spawn at mouse position"),ShowIf(nameof(IsNotMeleeWeaponOnly))]
+    [Tab("Misc")]
     public bool ShootNearMouse;
-    [Range(0f, 40f)]
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Range(0f, 40f)]
+    [Tab("Misc")]
     public float NearMouseRadius;
-    [Range(0f, 2f)]
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Range(0f, 2f)]
+    [Tab("Misc")]
     public float MouseRadiusPerProjectiles;
-    [Tooltip("Force the projectile to spawn outside the radius, if false it will spawn inside the radius")]
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Tooltip("Force the projectile to spawn outside the radius, if false it will spawn inside the radius")]
+    [Tab("Misc")]
     public bool NearMouseForceExteriorRadius;
-    [Tooltip("List of angle range from the direction of the player to the mouse position, used to spawn projectiles in a specific angle range")]
+    [ShowIf(nameof(IsNotMeleeWeaponOnly)),Tooltip("List of angle range from the direction of the player to the mouse position, used to spawn projectiles in a specific angle range")]
+    [Tab("Misc")]
     public List<Vector2> NearMouseAngleRangeFromDirection ;
+    
+    [ShowIf(nameof(UseMelee)),Foldout("Melee Settings")]
+    [InlineProperty]
     public WeaponMeleeSettings MeleeSettings ;
+    [ShowIf(nameof(IsProjectileWeapon)),Foldout("Projectile Settings"),OnValueChanged(nameof(UpdateDamageTypeDescription))]
+    [InlineProperty]
     public WeaponProjectileSettings ProjectileSettings ;
+    [ShowIf(nameof(IsRayWeapon)),Foldout("Ray Settings"),OnValueChanged(nameof(UpdateDamageTypeDescription))]
+    [InlineProperty]
     public WeaponRaySettings RaySettings ;
+    [ShowIf(nameof(IsAoeWeapon)),Foldout("Aoe Settings"),OnValueChanged(nameof(UpdateDamageTypeDescription))]
+    [InlineProperty]
     public WeaponAoeSettings AoeSettings ;
+    [ShowIf(nameof(IsSummonWeapon)),Foldout("Summon Settings")]
+    [InlineProperty]
     public SummonSettings SummonSettings ;
+
+    [Title("Stats")]
     public float DamageRatio ;
     public float AttackSpeedRatio ;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float CriticalChance;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public int ProjectileNumber ;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float ProjectileSpeed;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float SpeedRandomPercentage;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float LifeTime;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float LifeTimeRandomPercentage;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float Knockback;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float RandomSpreadAngle;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float SpreadAnglePerProjectile;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public bool RandomSpread ;
+    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public StatsData AdditionalStats;
 }
 

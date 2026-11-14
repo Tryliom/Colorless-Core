@@ -43,11 +43,15 @@ internal class ProAsset
 public struct TextDisplay
 {
     public TextDisplayType Type;
+    [EnumToggleButtons]
     public TextType TextType;
     public Color DefaultColor;
     public bool UseIcon;
+    [ShowIf(nameof(ShouldShowIcon))]
     public Icon Icon;
+    [ShowIf(nameof(UseIcon))]
     public List<Icon> Icons;
+    [ShowIf(nameof(UseIcon))]
     public bool UseIconText;
     [FormerlySerializedAs("UILocalizationName")] public string StatLocalizationName;
 }

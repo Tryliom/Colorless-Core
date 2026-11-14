@@ -28,6 +28,7 @@ public class AoeOnHit
 {
     public AoeType AoeName;
     public bool AllowAllConditions;
+    [HideIf(nameof(AllowAllConditions))]
     public List<OnHitSource> AllowedHitSources ;
     public float Chance;
     public float ChanceForEachSpawn;
@@ -43,7 +44,7 @@ public class AoeOnHit
     [Header("Time before spawn")]
     public float MinTimeBeforeSpawn;
     public float MaxTimeBeforeSpawn;
-    [Tooltip("Scale the time before spawn based on the distance from center of the source: time * distanceScale")]
+    [ShowIf(nameof(CanShowScaleDistance)),Tooltip("Scale the time before spawn based on the distance from center of the source: time * distanceScale")]
     public bool ScaleTimeOnDistance;
     
     [Header("Damage")]

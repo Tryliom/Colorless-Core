@@ -18,9 +18,9 @@ public class GroundItem : MonoBehaviour, ICollectible
 public class Collectible : GroundItem
 {
     
-    [SerializeField] protected SpriteRenderer SpriteRenderer;
-    [SerializeField] protected SpriteRenderer ShadowSpriteRenderer;
-public ObjectLauncher ObjectLauncher;
+    [SerializeField,Foldout("Internal References")] protected SpriteRenderer SpriteRenderer;
+    [SerializeField,Foldout("Internal References")] protected SpriteRenderer ShadowSpriteRenderer;
+    [Foldout("Internal References")] public ObjectLauncher ObjectLauncher;
     
     public CollectibleType Type ;
 

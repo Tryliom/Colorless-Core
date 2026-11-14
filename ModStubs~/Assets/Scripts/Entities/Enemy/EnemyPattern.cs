@@ -23,18 +23,28 @@ public enum BossType
 
 public class EnemyPattern : MonoBehaviour
 {
+    
+    [Title("Special Values")]
+    [Foldout("Internal References")]
     public AnimationCurve ChargeFxRadiusCurve;
+    [Foldout("Internal References")]
     public AnimationCurve ChargeFxSpeedCurve;
+    [Foldout("Internal References")]
     public AnimationCurve ChargeFxSpawnTimeCurve;
+    
+    [Title("Datas")]
     [FormerlySerializedAs("_enemyType")] [SerializeField]
+    [EnumToggleButtons]
     public EnemyType EnemyType;
-    [SerializeField]
+    [SerializeField,ShowIf(nameof(DisplayBossType))]
     public BossType BossType;
     [FormerlySerializedAs("_fly")] [SerializeField]
     public bool Flying;
     
     public GridManager GridManager =>throw null;
-    [SerializeReference]
+    
+    [Title("Patterns")]
+    [SerializeReference,OnValueChanged("OnPatternsChanged")]
     public List<Pattern> NoTargetPatterns;
     
     [HideInInspector] public bool IsControlledByPlayer;

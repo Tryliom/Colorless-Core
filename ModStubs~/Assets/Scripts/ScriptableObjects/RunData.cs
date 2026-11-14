@@ -50,7 +50,12 @@ public class RunData : ScriptableObject
     public bool ExpoMode;
     public bool LanMode; // Unlock all classes at level 1 and altar but no color shard gain
     public bool AskLanguageOnStart;
+    
+    [Title("Global Settings")]
     public float EnemyHealthMultiplier ;
+    
+    [Title("Debug"),InfoBox("Start game with these items when isDebug is enabled")]
+    [ValueDropdown(nameof(GetRelicOptions))]
     public List<Relic> DebugRelics ;
 
     public List<Collectible> DebugCollectiblesInInventory ;

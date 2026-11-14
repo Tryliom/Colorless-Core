@@ -21,12 +21,30 @@ public enum DangerType
 [Serializable]
 public class DangerSprite
 {
+	[ShowAssetPreview]
+    [HideLabel]
+    [HorizontalGroup("Sprites", 0.5f)]
     public Sprite Sprite;
+    [ShowAssetPreview]
+    [HideLabel]
+    [HorizontalGroup("Sprites", 0.5f)]
     public Sprite SpriteFiller;
     public bool IsRay;
+    [ShowAssetPreview,ShowIf(nameof(IsRay))]
+    [HideLabel]
+    [HorizontalGroup("Base", 0.5f)]
     public Sprite BaseSprite;
+    [ShowAssetPreview,ShowIf(nameof(IsRay))]
+    [HideLabel]
+    [HorizontalGroup("Base", 0.5f)]
     public Sprite BaseSpriteFiller;
+    [ShowAssetPreview,ShowIf(nameof(IsRay))]
+    [HideLabel]
+    [HorizontalGroup("Tip", 0.5f)]
     public Sprite TipSprite;
+    [ShowAssetPreview,ShowIf(nameof(IsRay))]
+    [HideLabel]
+    [HorizontalGroup("Tip", 0.5f)]
     public Sprite TipSpriteFiller;
 }
 

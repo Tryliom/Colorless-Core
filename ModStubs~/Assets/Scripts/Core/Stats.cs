@@ -138,81 +138,157 @@ public class StatsData
 {
     
     public bool ShowModifiedOnly;
+    [ShowIf(nameof(ShowRedHeartContainers))]
+    [Foldout("Health"),InfoBox("1 Red Heart Container = 2 Red Hearts")]
     [SerializeField] public int RedHeartContainers;
-    [SerializeField] public int RedHearts;
-    [FormerlySerializedAs("BlueHearts")] [SerializeField] public int Shields;
-    [SerializeField] public int GreenHearts;
-    [SerializeField] public int YellowHearts;
-    [SerializeField] public float Speed;
-    [SerializeField] public float CriticalChance;
-    [SerializeField] public float CriticalDamage;
-    [SerializeField] public float AttackSpeedPercentage;
-    [SerializeField] public float TotalDamagePercentage;
-    [FormerlySerializedAs("DamagePercentage")] [SerializeField] public float WeaponDamagePercentage;
-    [SerializeField] public float SpeedPercentage;
-    [SerializeField] public float ElementalDamagePercentage;
-    [SerializeField] public float NormalDamage;
-    [SerializeField] public float NormalDamagePercentage;
-    [SerializeField] public float FireDamage;
-    [SerializeField] public float FireDamagePercentage;
-    [SerializeField] public float FrostDamage;
-    [SerializeField] public float FrostDamagePercentage;
-    [SerializeField] public float ElectricDamage;
-    [SerializeField] public float ElectricDamagePercentage;
-    [SerializeField] public float PoisonDamage;
-    [SerializeField] public float PoisonDamagePercentage;
-    [SerializeField] public float SoulDamage;
-    [SerializeField] public float SoulDamagePercentage;
-    [SerializeField] public float ProjectileSpeedPercentage;
-    [SerializeField] public float ProjectileSizePercentage;
-    [SerializeField] public float ProjectileRangePercentage;
-    [SerializeField] public float ProjectileKnockbackPercentage;
-    [SerializeField] public float ProjectileBounceDamagePercentage;
-    [FormerlySerializedAs("HomingAngle")] [SerializeField] public float AngularSpeed;
-    [SerializeField] public float ProjectileNumber;
-    [SerializeField] public bool HomingShots;
-    [SerializeField] public float PierceShots;
-    [SerializeField] public float BouncingShots;
-    [SerializeField] public float Ricochet;
-    [SerializeField] public bool PassThroughWall;
-    [SerializeField] public bool ControlledShots;
-    [SerializeField] public int DashCharges;
-    [SerializeField] public float DashCooldownReductionPercentage;
-    [SerializeField] public float AoeDamagePercentage;
-    [SerializeField] public float AoeRadiusPercentage;
-    [SerializeField] public float AoeCriticalChance;
-    [SerializeField] public float AoeRefire;
-    [SerializeField] public float ChanceToShootAgain;
-    [SerializeField] public float AmmoPercentage;
-    [SerializeField] public float Ammo;
-    [SerializeField] public float MaxEnergy;
-    [SerializeField] public float MaxEnergyPercentage;
-    [SerializeField] public float EnergyPerShot;
-    [SerializeField] public float EnergyPerShotPercentage;
-    [SerializeField] public float ManaMax;
-    [SerializeField] public float ManaMaxPercentage;
-    [SerializeField] public float ManaRegeneration;
-    [SerializeField] public float ManaRegenerationPercentage;
-    [SerializeField] public float ManaCost;
-    [SerializeField] public float ManaCostPercentage;
-    [SerializeField] public float GoldGainPercentage;
-    [SerializeField] public float Luck;
-    [SerializeField] public float ExecutionRate;
-    [SerializeField] public float DodgeChance;
-    [SerializeField] public float SummonDamagePercentage;
-    [SerializeField] public float SummonHealthPercentage;
-    [SerializeField] public float SummonSpeedPercentage;
-    [SerializeField] public float SummonAttackSpeedPercentage;
-    [SerializeField] public float SummonHealingPercentage;
-    [SerializeField] public float SummonArmorPercentage;
-    [SerializeField] public int SummonArmorFlat;
-    [SerializeField] public float SummonLifestealPercentage;
-    [SerializeField] public float SummonDodgeChance;
-    [SerializeField] public float SummonDamageReduction;
-    [SerializeField] public int MaxSummon;
-    [SerializeField] public float SummonExperience;
-    [SerializeField] public float ArmorPenetrationPercentage;
-    [SerializeField] public int ArmorPenetrationFlat;
+    [ShowIf(nameof(ShowRedHearts))]
+    [SerializeField,Foldout("Health")] public int RedHearts;
+    [ShowIf(nameof(ShowShields))]
+    [FormerlySerializedAs("BlueHearts")] [SerializeField,Foldout("Health")] public int Shields;
+    [ShowIf(nameof(ShowGreenHearts))]
+    [SerializeField,Foldout("Health")] public int GreenHearts;
+    [ShowIf(nameof(ShowYellowHearts))]
+    [SerializeField,Foldout("Health")] public int YellowHearts;
+    [ShowIf(nameof(ShowSpeed))]
+    [SerializeField,Foldout("Basic Stats")] public float Speed;
+    [ShowIf(nameof(ShowCriticalChance))]
+    [SerializeField,Foldout("Basic Stats")] public float CriticalChance;
+    [ShowIf(nameof(ShowCriticalDamage))]
+    [SerializeField,Foldout("Basic Stats")] public float CriticalDamage;
+    [ShowIf(nameof(ShowAttackSpeedPercentage))]
+    [SerializeField,Foldout("Basic Stats")] public float AttackSpeedPercentage;
+    [ShowIf(nameof(ShowTotalDamagePercentage))]
+    [SerializeField,Foldout("Basic Stats")] public float TotalDamagePercentage;
+    [ShowIf(nameof(ShowWeaponDamagePercentage))]
+    [FormerlySerializedAs("DamagePercentage")] [SerializeField,Foldout("Basic Stats")] public float WeaponDamagePercentage;
+    [ShowIf(nameof(ShowSpeedPercentage))]
+    [SerializeField,Foldout("Basic Stats")] public float SpeedPercentage;
+    [ShowIf(nameof(ShowElementalDamagePercentage))]
+    [SerializeField,Foldout("Basic Stats")] public float ElementalDamagePercentage;
+    [ShowIf(nameof(ShowNormalDamage))]
+    [SerializeField,Foldout("Damage Types")] public float NormalDamage;
+    [ShowIf(nameof(ShowNormalDamagePercentage))]
+    [SerializeField,Foldout("Damage Types")] public float NormalDamagePercentage;
+    [ShowIf(nameof(ShowFireDamage))]
+    [SerializeField,Foldout("Damage Types")] public float FireDamage;
+    [ShowIf(nameof(ShowFireDamagePercentage))]
+    [SerializeField,Foldout("Damage Types")] public float FireDamagePercentage;
+    [ShowIf(nameof(ShowFrostDamage))]
+    [SerializeField,Foldout("Damage Types")] public float FrostDamage;
+    [ShowIf(nameof(ShowFrostDamagePercentage))]
+    [SerializeField,Foldout("Damage Types")] public float FrostDamagePercentage;
+    [ShowIf(nameof(ShowElectricDamage))]
+    [SerializeField,Foldout("Damage Types")] public float ElectricDamage;
+    [ShowIf(nameof(ShowElectricDamagePercentage))]
+    [SerializeField,Foldout("Damage Types")] public float ElectricDamagePercentage;
+    [ShowIf(nameof(ShowPoisonDamage))]
+    [SerializeField,Foldout("Damage Types")] public float PoisonDamage;
+    [ShowIf(nameof(ShowPoisonDamagePercentage))]
+    [SerializeField,Foldout("Damage Types")] public float PoisonDamagePercentage;
+    [ShowIf(nameof(ShowSoulDamage))]
+    [SerializeField,Foldout("Damage Types")] public float SoulDamage;
+    [ShowIf(nameof(ShowSoulDamagePercentage))]
+    [SerializeField,Foldout("Damage Types")] public float SoulDamagePercentage;
+    [ShowIf(nameof(ShowProjectileSpeedPercentage))]
+    [SerializeField,Foldout("Projectile")] public float ProjectileSpeedPercentage;
+    [ShowIf(nameof(ShowProjectileSizePercentage))]
+    [SerializeField,Foldout("Projectile")] public float ProjectileSizePercentage;
+    [ShowIf(nameof(ShowProjectileRangePercentage))]
+    [SerializeField,Foldout("Projectile")] public float ProjectileRangePercentage;
+    [ShowIf(nameof(ShowProjectileKnockbackPercentage))]
+    [SerializeField,Foldout("Projectile")] public float ProjectileKnockbackPercentage;
+    [ShowIf(nameof(ShowProjectileBounceDamagePercentage))]
+    [SerializeField,Foldout("Projectile")] public float ProjectileBounceDamagePercentage;
+    [ShowIf(nameof(ShowAngularSpeed))]
+    [FormerlySerializedAs("HomingAngle")] [SerializeField,Foldout("Projectile")] public float AngularSpeed;
+    [ShowIf(nameof(ShowProjectileNumber))]
+    [SerializeField,Foldout("Projectile")] public float ProjectileNumber;
+    [ShowIf(nameof(ShowHomingShots))]
+    [SerializeField,Foldout("Projectile Effects")] public bool HomingShots;
+    [ShowIf(nameof(ShowPierceShots))]
+    [SerializeField,Foldout("Projectile Effects")] public float PierceShots;
+    [ShowIf(nameof(ShowBouncingShots))]
+    [SerializeField,Foldout("Projectile Effects")] public float BouncingShots;
+    [ShowIf(nameof(ShowRicochet))]
+    [SerializeField,Foldout("Projectile Effects")] public float Ricochet;
+    [ShowIf(nameof(ShowPassThroughWall))]
+    [SerializeField,Foldout("Projectile Effects")] public bool PassThroughWall;
+    [ShowIf(nameof(ShowControlledShots))]
+    [SerializeField,Foldout("Projectile Effects")] public bool ControlledShots;
+    [ShowIf(nameof(ShowDashCharges))]
+    [SerializeField,Foldout("Dash")] public int DashCharges;
+    [ShowIf(nameof(ShowDashCooldownReductionPercentage))]
+    [SerializeField,Foldout("Dash")] public float DashCooldownReductionPercentage;
+    [ShowIf(nameof(ShowAoeDamagePercentage))]
+    [SerializeField,Foldout("AoE")] public float AoeDamagePercentage;
+    [ShowIf(nameof(ShowAoeRadiusPercentage))]
+    [SerializeField,Foldout("AoE")] public float AoeRadiusPercentage;
+    [ShowIf(nameof(ShowAoeCriticalChance))]
+    [SerializeField,Foldout("AoE")] public float AoeCriticalChance;
+    [ShowIf(nameof(ShowAoeRefire))]
+    [SerializeField,Foldout("AoE")] public float AoeRefire;
+    [ShowIf(nameof(ShowChanceToShootAgain))]
+    [SerializeField,Foldout("Weapon")] public float ChanceToShootAgain;
+    [ShowIf(nameof(ShowAmmoPercentage))]
+    [SerializeField,Foldout("Weapon")] public float AmmoPercentage;
+    [ShowIf(nameof(ShowAmmo))]
+    [SerializeField,Foldout("Weapon")] public float Ammo;
+    [ShowIf(nameof(ShowMaxEnergy))]
+    [SerializeField,Foldout("Weapon")] public float MaxEnergy;
+    [ShowIf(nameof(ShowMaxEnergyPercentage))]
+    [SerializeField,Foldout("Weapon")] public float MaxEnergyPercentage;
+    [ShowIf(nameof(ShowEnergyPerShot))]
+    [SerializeField,Foldout("Weapon")] public float EnergyPerShot;
+    [ShowIf(nameof(ShowEnergyPerShotPercentage))]
+    [SerializeField,Foldout("Weapon")] public float EnergyPerShotPercentage;
+    [ShowIf(nameof(ShowManaMax))]
+    [SerializeField,Foldout("Mana")] public float ManaMax;
+    [ShowIf(nameof(ShowManaMaxPercentage))]
+    [SerializeField,Foldout("Mana")] public float ManaMaxPercentage;
+    [ShowIf(nameof(ShowManaRegeneration))]
+    [SerializeField,Foldout("Mana")] public float ManaRegeneration;
+    [ShowIf(nameof(ShowManaRegenerationPercentage))]
+    [SerializeField,Foldout("Mana")] public float ManaRegenerationPercentage;
+    [ShowIf(nameof(ShowManaCost))]
+    [SerializeField,Foldout("Mana")] public float ManaCost;
+    [ShowIf(nameof(ShowManaCostPercentage))]
+    [SerializeField,Foldout("Mana")] public float ManaCostPercentage;
+    [ShowIf(nameof(ShowGoldGainPercentage))]
+    [SerializeField,Foldout("Other")] public float GoldGainPercentage;
+    [ShowIf(nameof(ShowLuck))]
+    [SerializeField,Foldout("Other")] public float Luck;
+    [ShowIf(nameof(ShowExecutionRate))]
+    [SerializeField,Foldout("Other")] public float ExecutionRate;
+    [ShowIf(nameof(ShowDodgeChance))]
+    [SerializeField,Foldout("Other")] public float DodgeChance;
+    [ShowIf(nameof(ShowSummonDamagePercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonDamagePercentage;
+    [ShowIf(nameof(ShowSummonHealthPercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonHealthPercentage;
+    [ShowIf(nameof(ShowSummonSpeedPercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonSpeedPercentage;
+    [ShowIf(nameof(ShowSummonAttackSpeedPercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonAttackSpeedPercentage;
+    [ShowIf(nameof(ShowSummonHealingPercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonHealingPercentage;
+    [ShowIf(nameof(ShowSummonArmorPercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonArmorPercentage;
+    [ShowIf(nameof(ShowSummonArmorFlat))]
+    [SerializeField,Foldout("Summon")] public int SummonArmorFlat;
+    [ShowIf(nameof(ShowSummonLifestealPercentage))]
+    [SerializeField,Foldout("Summon")] public float SummonLifestealPercentage;
+    [ShowIf(nameof(ShowSummonDodgeChance))]
+    [SerializeField,Foldout("Summon")] public float SummonDodgeChance;
+    [ShowIf(nameof(ShowSummonDamageReduction))]
+    [SerializeField,Foldout("Summon")] public float SummonDamageReduction;
+    [ShowIf(nameof(ShowMaxSummon))]
+    [SerializeField,Foldout("Summon")] public int MaxSummon;
+    [ShowIf(nameof(ShowSummonExperience))]
+    [SerializeField,Foldout("Summon")] public float SummonExperience;
+    [ShowIf(nameof(ShowArmorPenetrationPercentage))]
+    [SerializeField,Foldout("Armor")] public float ArmorPenetrationPercentage;
+    [ShowIf(nameof(ShowArmorPenetrationFlat))]
+    [SerializeField,Foldout("Armor")] public int ArmorPenetrationFlat;
 
     /// <summary>
     /// Reflection metadata for every field decorated with <see cref="StatFieldAttribute"/>, keyed by StatName.

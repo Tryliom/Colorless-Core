@@ -18,6 +18,7 @@ public enum PixelTrailWidthType
 public class PixelTrailData
 {
 	public PixelTrailWidthType TrailWidthType ;
+	[ShowIf(nameof(TrailWidthType), PixelTrailWidthType.Custom)]
 	public AnimationCurve TrailWidth ;
 	public Gradient BaseGradient;
 	

@@ -26,8 +26,10 @@ public class RewardCondition
     public int MaxPerFortress ;
     public int MaxPerRun ;
     public bool PreventTwiceInARow;
+    [EnumToggleButtons]
     public Condition Condition;
     public bool ColorRestriction;
+    [ShowIf(nameof(ColorRestriction))]
     public ThemeColor ThemeColor;
 }
 
@@ -38,6 +40,7 @@ public class Reward : ScriptableObject
     public string LocalizedPrefix;
     public Sprite Icon;
     public bool ColorIconWithTheme;
+    [EnumToggleButtons]
     public RoomType RoomType;
     [HideInInspector]
     public ThemeColor ThemeColor ;
@@ -46,9 +49,11 @@ public class Reward : ScriptableObject
     
     [Header("Condition")]
     public bool HasCondition;
+    [ShowIf(nameof(HasCondition))]
     public RewardCondition Condition;
     [FormerlySerializedAs("CannotBeElite")]
     public bool NoModifiers;
+    [EnumToggleButtons]
     public Rarity Rarity;
 
     public virtual void GiveReward(Vector3 rewardPosition) {throw new System.NotImplementedException();}    

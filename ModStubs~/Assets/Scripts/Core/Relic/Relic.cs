@@ -18,6 +18,7 @@ internal class LevelData
 public class RelicCondition
 {
     public ComparisonCondition Comparison;
+    [ValueDropdown(nameof(GetRelicOptions))]
     public List<Relic> Relics ;
     
 }

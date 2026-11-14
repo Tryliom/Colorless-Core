@@ -10,7 +10,7 @@ using UnityEngine;
  */
 public class BaseMenu : MonoBehaviour
 {
-	[SerializeField]
+	[SerializeField,Required]
 	protected RunData RunData;
 
 	protected bool IsDisplayed { get; private set; }

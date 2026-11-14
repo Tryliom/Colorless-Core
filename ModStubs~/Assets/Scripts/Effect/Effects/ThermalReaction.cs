@@ -7,6 +7,7 @@ using UnityEngine;
 [Serializable]
 public class ThermalReactionEffectSettings
 {
+	[InfoBox("Ratio of the total health lost while being affected by Thermal Reaction to the damage dealt per stack per total time when the effect expires.")]
 	public float RatioMissingHealthToDamagePerStack ;
 }
 

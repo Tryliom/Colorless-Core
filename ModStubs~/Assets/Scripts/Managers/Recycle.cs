@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Recycler : MonoBehaviour
 {
-	[SerializeField]
+	[SerializeField,Required]
 	protected RunData RunData;
 	
 	public void CheckRecycle()

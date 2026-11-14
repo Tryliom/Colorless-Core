@@ -13,6 +13,8 @@ public class ObjectLauncher : MonoBehaviour
 {
 
 	private enum LaunchState { Idle, Flying, Bouncing }
+
+	[Button]
 	public void Launch()
 {throw new System.NotImplementedException();}
 	public void Stop()
