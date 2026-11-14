@@ -52,6 +52,9 @@ public class AoeOnHit
     [Tooltip("Damage increase per main level (1-7), like 10 x 2 (level 2) = 20")]
     public float LevelRatio;
     public float ProjectileDamageRatio;
+    
+    // Odin
+    private bool CanShowScaleDistance =>throw null;
 }
 
 public enum OnHitSource

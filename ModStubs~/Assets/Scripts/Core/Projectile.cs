@@ -455,6 +455,12 @@ public class Projectile : MonoBehaviour
     [SerializeField] private float _defaultKnockback;
     [SerializeField] private bool _useCursorDirectionByDefault;
     [SerializeField] private StatsData _baseStats;
+    
+    // Odin
+    private bool HasDamageTypeAnEffect =>throw null;
+    private bool ShowRotationMaxMultiplier =>throw null;
+    private bool ShowCircularFollow =>throw null;
+    private bool ShowCircularFollowSettings =>throw null;
 
     public void Reset()
 {throw new System.NotImplementedException();}    
