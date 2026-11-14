@@ -48,9 +48,37 @@ namespace ColorlessOdyssey
 				if (request.Status == UnityEditor.PackageManager.StatusCode.Failure)
 				{
 					Debug.LogWarning($"[ModStubsSync] Package update failed ({request.Error.message}), syncing with the current version.");
+					RunPending();
+
+					return;
 				}
 
-				RunPending();
+				var current = PackageInfo.FindForAssetPath($"Packages/{PackageName}");
+				var currentHash = current?.git?.hash;
+				var latestHash = request.Result?.git?.hash;
+
+				if (currentHash == latestHash)
+				{
+					RunPending();
+
+					return;
+				}
+
+				// The new files are not imported yet: wait for the domain reload (OnLoad runs the sync), with a timeout as a safety net.
+				var deadline = EditorApplication.timeSinceStartup + 60;
+
+				void WaitForReload()
+				{
+					if (EditorApplication.timeSinceStartup < deadline)
+					{
+						return;
+					}
+
+					EditorApplication.update -= WaitForReload;
+					RunPending();
+				}
+
+				EditorApplication.update += WaitForReload;
 			}
 
 			EditorApplication.update += Poll;
