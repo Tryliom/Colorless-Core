@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Fluxy;
 using TryliomUtility;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -52,12 +51,6 @@ public class RoomSetup : MonoBehaviour
     [SerializeField] private Transform _globalAuraSolver;
     [SerializeField] private Transform _otherAuraSolver;
     [SerializeField] private Transform _bossAuraSolver;
-    [SerializeField] private FluxyTarget _playerAura;
-    [SerializeField] private FluxyContainer _playerAuraContainer;
-    [SerializeField] private FluxyContainer _globalAuraContainer;
-    [SerializeField] private FluxyContainer _bossAuraContainer;
-    [SerializeField] private FluxyTarget _globalAuraTarget;
-    [SerializeField] private FluxyContainer _otherAuraContainer;
     [SerializeField] private Light2D _globalMainLight;
     [SerializeField] private Light2D _globalEnvironmentLight;
     
@@ -74,8 +67,6 @@ public class RoomSetup : MonoBehaviour
     public GameObject Decorations =>thrownull;
     public List<Vector3> DoorsPositions =>thrownull;
     public Room Room { get; private set; }
-    
-    public FluxyTarget PlayerAura =>thrownull;
 
     public void SetupNextRoom()
 {throw new System.NotImplementedException();}    
@@ -117,16 +108,4 @@ public class RoomSetup : MonoBehaviour
 	 * Start coroutine from this object (never disabled) for scripts that cannot do that
 	 */
 	public void LaunchCoroutine(IEnumerator routine)
-{throw new System.NotImplementedException();}	
-	public void AddGlobalAuraTarget(FluxyTarget target)
-{throw new System.NotImplementedException();}
-	public void RemoveGlobalAuraTarget(FluxyTarget target)
-{throw new System.NotImplementedException();}	
-	public void AddPlayerAuraTarget(FluxyTarget target)
-{throw new System.NotImplementedException();}	
-	public void RemovePlayerAuraTarget(FluxyTarget target)
-{throw new System.NotImplementedException();}	
-	public void AddBossAuraTarget(FluxyTarget target)
-{throw new System.NotImplementedException();}	
-	public void RemoveBossAuraTarget(FluxyTarget target)
 {throw new System.NotImplementedException();}}

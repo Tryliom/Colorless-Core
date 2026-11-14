@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Fluxy;
 using TMPro;
 using TryliomUtility;
 using UnityEngine;
@@ -37,7 +36,6 @@ public class Door : MonoBehaviour
     [SerializeField] private ModifierText _rightMeta;
     [SerializeField] private ModifierText _leftMeta;
     [SerializeField] private BoxCollider2D _explanationTrigger;
-    [SerializeField] private FluxyTarget _doorAura;
     
     [Header("Sprites")]
     [SerializeField] private Sprite _lockedDoorSprite;
