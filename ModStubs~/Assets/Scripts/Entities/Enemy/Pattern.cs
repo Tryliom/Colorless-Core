@@ -169,6 +169,8 @@ public class Pattern
      */
     public bool IsConditionMet()
 {throw new System.NotImplementedException();}
+    private bool HideTargetSearchType()
+{throw new System.NotImplementedException();}
     protected virtual bool CheckConditions()
 {throw new System.NotImplementedException();}
     protected virtual void SetupStrategy()

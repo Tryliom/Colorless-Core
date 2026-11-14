@@ -13,6 +13,8 @@ public class RelicSelector : GroundItem
 
     protected RunData RunData =>throw null;
     
+    private bool HasThemeColor =>throw null;
+    
     public override CollectibleType GetCollectibleType() {throw new System.NotImplementedException();}    public ObjectLauncher ObjectLauncher =>throw null;
     protected List<string> AvailableRelicsIds ;
     protected readonly List<Relic> AvailableRelics ;

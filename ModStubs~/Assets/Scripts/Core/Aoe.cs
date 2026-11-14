@@ -31,6 +31,24 @@ public class Aoe : MonoBehaviour
         public float PullDuration;
     }
     
+    [Title("Damage settings")]
+    [SerializeField] private bool _noDamage;
+
+    [SerializeField,Space]
+    private bool _pullEnemiesOnHit;
+    
+    [SerializeField,Space]
+    private bool _concentratedProjectileOnExpire;
+
+    [Title("Pulse settings")]
+    [SerializeField] private bool _pulse;
+
+    [Title("Animation: Pulse color")]
+    [SerializeField] private bool _pulseColor;
+    
+    // Odin
+    private bool HasDamageTypeAnEffect =>throw null;
+    
     public AoeType AoeType =>throw null;
 
     // Fires when this aoe gets deactivated to return it to the pool. Cleared in Reset() to avoid stale subscriptions.

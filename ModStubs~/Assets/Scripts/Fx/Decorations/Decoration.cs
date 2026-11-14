@@ -23,6 +23,8 @@ internal class HeartTypeChance
 
 public class Decoration : MonoBehaviour
 {
+    [FormerlySerializedAs("_breakNumberType")]
+    [SerializeField] private ScrapNumberType _scrapNumberType;
     
     public int GetTotalSprites()
 {throw new System.NotImplementedException();}    

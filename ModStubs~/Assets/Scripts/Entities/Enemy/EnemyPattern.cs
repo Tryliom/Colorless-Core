@@ -46,7 +46,14 @@ public class EnemyPattern : MonoBehaviour
     [Title("Patterns")]
     [SerializeReference,OnValueChanged("OnPatternsChanged")]
     public List<Pattern> NoTargetPatterns;
-    
+
+    private IEnumerable<ValueDropdownItem> GetCombinedPatternIndices()
+{throw new System.NotImplementedException();}    
+    // Odin
+    private bool DisplayBossType =>throw null;
+
+    private void OnPatternsChanged()
+{throw new System.NotImplementedException();}    
     [HideInInspector] public bool IsControlledByPlayer;
     public bool WasSummonedByWeapon { private set; get; }
     public WeaponName SummonedByWeaponName { private set; get; }

@@ -20,7 +20,9 @@ public class RelicCondition
     public ComparisonCondition Comparison;
     [ValueDropdown(nameof(GetRelicOptions))]
     public List<Relic> Relics ;
-    
+
+    private IEnumerable<Relic> GetRelicOptions()
+{throw new System.NotImplementedException();}    
 }
 
 public enum RelicType
@@ -47,7 +49,12 @@ public enum AltarRelicChoice
 
 public class Relic : MonoBehaviour
 {
+    [SerializeField]
+    [EnumToggleButtons]
+    private RelicType _relicType;
     
+    // Odin
+    private bool ShowThemeColor() {throw new System.NotImplementedException();}    
 
 	protected RunData RunData =>throw null;
 	

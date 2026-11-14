@@ -19,6 +19,11 @@ public enum SortingOrderMode
  */
 public class SpriteSortingZ : MonoBehaviour
 {
+    [SerializeField] private bool _noSprite;
+    [SerializeField,Required,HideIf(nameof(_noSprite))] private SpriteRenderer _spriteRenderer;
+    [SerializeField,HideIf(nameof(_noSprite))] private SortingOrderMode _sortingOrderMode ;
+    
+    private bool UseCustomOffset =>throw null;
 
     /**
      * Sets up the SpriteSortingZ component with the specified parameters.

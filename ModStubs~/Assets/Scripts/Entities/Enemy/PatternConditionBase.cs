@@ -13,6 +13,9 @@ public class PatternConditions
 	public ComparisonCondition Comparison;
 	[SerializeReference,ListDrawerSettings(ShowFoldout = false)]
 	public List<PatternConditionBase> Conditions ;
+	
+	// Odin
+	private bool ShowIfConditions =>throw null;
 
 	public bool IsMet(Pattern currentPattern, bool duringExecution)
 {throw new System.NotImplementedException();}

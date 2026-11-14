@@ -10,6 +10,10 @@ using Random = UnityEngine.Random;
 
 public class Ray : MonoBehaviour
 {
+    [SerializeField] private bool _useStartForEndAnimation;
+    
+    // Odin
+    private bool HasDamageTypeAnEffect =>throw null;
     
     // Fires when this ray gets deactivated to return it to the pool. Cleared in Reset() to avoid stale subscriptions.
     public event Action<Ray> OnDeactivated;

@@ -224,7 +224,10 @@ public class WeaponMeleeSettings
     public WeaponMeleeSettings Clone()
 {throw new System.NotImplementedException();}    
     public ProjectileId GetProjectileId()
-{throw new System.NotImplementedException();}}
+{throw new System.NotImplementedException();}    
+    // Odin
+    private bool HasDamageTypeAnEffect =>throw null;
+}
 
 [Serializable]
 public class MultipleProjectileSettings
@@ -340,6 +343,9 @@ public class WeaponShootSettings
     [Foldout("Settings")]
     [InlineProperty]
     public ShootSettings ShootSettings ;
+    
+    // Odin
+    private bool HasMoreThanOneShoot =>throw null;
 }
 
 [Serializable]
@@ -445,10 +451,23 @@ public class ShootSettings
     public bool RandomSpread ;
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public StatsData AdditionalStats;
-}
+    
+    // Odin conditional fields
+    private bool IsCustomRotation() {throw new System.NotImplementedException();}    private bool IsProjectileWeapon() {throw new System.NotImplementedException();}    private bool IsRayWeapon() {throw new System.NotImplementedException();}    private bool IsAoeWeapon() {throw new System.NotImplementedException();}    private bool IsSummonWeapon() {throw new System.NotImplementedException();}    private bool IsNotMeleeWeaponOnly() {throw new System.NotImplementedException();}    private bool HasDamageTypeAnEffect =>throw null;
+    private bool CanOverrideDamageType =>throw null;
+
+    private void UpdateDamageTypeDescription()
+{throw new System.NotImplementedException();}}
 
 public class Weapon : MonoBehaviour
 {
+    [SerializeField] private Rarity _rarity;
+    
+    [Title("Energy Weapon")]
+    [SerializeField] private bool _isEnergyWeapon;
+    
+    [Title("Mana Weapon")]
+    [SerializeField] private bool _isManaWeapon;
     [Tooltip("Offset from player applied ignoring the weapon rotation")]
     public Vector2 FixedOffsetFromPlayer;
     

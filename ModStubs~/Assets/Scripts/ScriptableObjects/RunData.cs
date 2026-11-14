@@ -58,6 +58,8 @@ public class RunData : ScriptableObject
     [ValueDropdown(nameof(GetRelicOptions))]
     public List<Relic> DebugRelics ;
 
+    private IEnumerable<Relic> GetRelicOptions()
+{throw new System.NotImplementedException();}
     public List<Collectible> DebugCollectiblesInInventory ;
     public List<GameObject> DebugItemsSpawned ;
     public int DebugStartGold;
