@@ -21,7 +21,8 @@ public class ShortCircuit : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public ShortCircuit() {throw new System.NotImplementedException();}
+    public ShortCircuit() : base(EffectType.Debuff, 5f, true, 10)
+{throw new System.NotImplementedException();}
     protected override void OnAttachToGameObject(SourceOrigin _)
 {throw new System.NotImplementedException();}
     public override void Update(float deltaTime)

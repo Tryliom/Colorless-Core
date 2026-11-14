@@ -14,6 +14,7 @@ public class ShadowCurse : Effect
 {
 	// Convention: every effect must have this static method
 	public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}	
-    public ShadowCurse(float duration = 3f) {throw new System.NotImplementedException();}
+    public ShadowCurse(float duration = 3f) : base(EffectType.Debuff, duration, true, 10)
+{throw new System.NotImplementedException();}
     public override void Update(float deltaTime)
 {throw new System.NotImplementedException();}}

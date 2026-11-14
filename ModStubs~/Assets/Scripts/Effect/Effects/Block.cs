@@ -14,7 +14,7 @@ public class Block : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Block() {throw new System.NotImplementedException();}
+    public Block() : base(EffectType.Buff, -1, true, 5, false, true) {throw new System.NotImplementedException();}
     public override void OnAdd()
 {throw new System.NotImplementedException();}
     protected override void OnExpire()

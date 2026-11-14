@@ -19,7 +19,7 @@ public class Bleeding : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public Bleeding() {throw new System.NotImplementedException();}
+    public Bleeding() : base(EffectType.Debuff, 5, true, 20) {throw new System.NotImplementedException();}
     public override void Update(float deltaTime)
 {throw new System.NotImplementedException();}
     protected override void OnAddStack()

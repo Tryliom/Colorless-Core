@@ -14,7 +14,7 @@ public class ThermalReaction : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public ThermalReaction() {throw new System.NotImplementedException();}
+    public ThermalReaction() : base(EffectType.Debuff, 1.5f, true, -1) {throw new System.NotImplementedException();}
     public override void OnAdd()
 {throw new System.NotImplementedException();}
     public override void Update(float deltaTime)

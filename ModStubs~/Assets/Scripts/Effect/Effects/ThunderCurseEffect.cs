@@ -16,6 +16,6 @@ public class ThunderCurseEffect : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}
-    public ThunderCurseEffect() {throw new System.NotImplementedException();}
+    public ThunderCurseEffect() : base(EffectType.Debuff, 4) {throw new System.NotImplementedException();}
     public override void Update(float deltaTime)
 {throw new System.NotImplementedException();}}

@@ -42,7 +42,7 @@ public class IllOmenEffect : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}    
-    public IllOmenEffect() {throw new System.NotImplementedException();}	
+    public IllOmenEffect() : base(EffectType.Debuff, 3f, true, 30) {throw new System.NotImplementedException();}	
 
     protected override void OnAttachToGameObject(SourceOrigin origin)
 {throw new System.NotImplementedException();}

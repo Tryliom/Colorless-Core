@@ -14,6 +14,7 @@ public class StolenSpeed : Effect
 {
     // Convention: every effect must have this static method
     public static Effect Create(GameObject attacker, float value, float time) {throw new System.NotImplementedException();}    
-    public StolenSpeed(GameObject attacker, float duration = 5f) {throw new System.NotImplementedException();}
+    public StolenSpeed(GameObject attacker, float duration = 5f) : base(EffectType.Debuff, duration == 0 ? 5f : duration, true, 10)
+{throw new System.NotImplementedException();}
     public override void Update(float deltaTime)
 {throw new System.NotImplementedException();}}
