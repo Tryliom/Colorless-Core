@@ -1,0 +1,1500 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+
+namespace ColorlessCore.Inspector.Editor
+{
+    /// <summary>
+    /// Draws arrays and lists with an Odin-like look: a header with the element count and a "+" button,
+    /// and a "x" button on each element. Rect based, so it can be used from inspectors and property drawers.
+    /// </summary>
+    public static class NaughtyListDrawer
+    {
+        private const float HeaderHeight = 22f;
+        private const float ButtonWidth = 22f;
+        private const float Spacing = 2f;
+        private const float ElementIndent = 32f;
+        private const float TopPadding = 5f;
+        private const float InnerPadding = 4f;
+        private const float HeaderPadding = 2f;
+        private const float BottomPadding = 2f;
+
+        private static readonly Color HeaderColor = new Color(0f, 0f, 0f, 0.2f);
+        private static readonly Color BorderColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+        private static readonly Color EvenRowColor = new Color(1f, 1f, 1f, 0.04f);
+        private static readonly Color OddRowColor = new Color(0f, 0f, 0f, 0.09f);
+
+        private static string _dragKey;
+        private static int _dragIndex;
+        private static int _dragTarget;
+
+        private static GUIStyle HandleStyle => new GUIStyle(EditorStyles.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            normal = { textColor = Color.gray }
+        };
+
+        private static GUIStyle RemoveStyle => new GUIStyle(EditorStyles.iconButton)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            padding = new RectOffset(0, 0, 0, 0)
+        };
+
+        public static bool IsList(SerializedProperty property)
+        {
+            return property.isArray && property.propertyType != SerializedPropertyType.String;
+        }
+
+        public static bool IsDictionary(SerializedProperty property)
+        {
+            return property.propertyType == SerializedPropertyType.Generic && !property.isArray
+                && property.FindPropertyRelative("keyData") is { isArray: true }
+                && property.FindPropertyRelative("valueData") is { isArray: true };
+        }
+
+        private static float GetDictionaryHeight(SerializedProperty property)
+        {
+            EnsureExpanded(property);
+
+            var height = HeaderHeight + HeaderPadding * 2f;
+
+            if (!property.isExpanded)
+            {
+                return height + TopPadding;
+            }
+
+            var keys = property.FindPropertyRelative("keyData");
+            var values = property.FindPropertyRelative("valueData");
+
+            height += InnerPadding;
+
+            for (var i = 0; i < keys.arraySize; i++)
+            {
+                height += GetPairHeight(keys, values, i) + Spacing;
+            }
+
+            return height + BottomPadding + TopPadding;
+        }
+
+        // Adds an entry with a key that is not used yet, otherwise the dictionary would collapse the duplicate
+        private static void AddEntry(SerializedProperty keys, SerializedProperty values)
+        {
+            var count = keys.arraySize;
+
+            keys.arraySize++;
+            values.arraySize++;
+
+            var newKey = keys.GetArrayElementAtIndex(count);
+
+            if (newKey.propertyType == SerializedPropertyType.Enum)
+            {
+                var used = new HashSet<int>();
+
+                for (var i = 0; i < count; i++)
+                {
+                    used.Add(keys.GetArrayElementAtIndex(i).enumValueIndex);
+                }
+
+                for (var i = 0; i < newKey.enumNames.Length; i++)
+                {
+                    if (!used.Contains(i))
+                    {
+                        newKey.enumValueIndex = i;
+                        GUI.changed = true;
+
+                        return;
+                    }
+                }
+
+                keys.arraySize--;
+                values.arraySize--;
+            }
+            else if (newKey.propertyType == SerializedPropertyType.Integer)
+            {
+                var max = int.MinValue;
+
+                for (var i = 0; i < count; i++)
+                {
+                    max = Mathf.Max(max, keys.GetArrayElementAtIndex(i).intValue);
+                }
+
+                newKey.intValue = count == 0 ? 0 : max + 1;
+            }
+            else if (newKey.propertyType == SerializedPropertyType.String)
+            {
+                newKey.stringValue = "Key " + count;
+            }
+        }
+
+        private static void ShowDictionaryContextMenu(SerializedProperty property, int index)
+        {
+            var serializedObject = property.serializedObject;
+            var path = property.propertyPath;
+            var menu = new GenericMenu();
+            var clipboardKey = "dictionary:" + property.FindPropertyRelative("valueData").arrayElementType;
+
+            void Apply(Action<SerializedProperty, SerializedProperty> action)
+            {
+                serializedObject.Update();
+
+                var dictionary = serializedObject.FindProperty(path);
+
+                action(dictionary.FindPropertyRelative("keyData"), dictionary.FindPropertyRelative("valueData"));
+                serializedObject.ApplyModifiedProperties();
+            }
+
+            if (index >= 0)
+            {
+                var copied = CopyValue(property.FindPropertyRelative("valueData").GetArrayElementAtIndex(index));
+
+                menu.AddItem(new GUIContent("Copy"), false, () =>
+                {
+                    _clipboard = copied;
+                    _clipboardKey = clipboardKey;
+                });
+
+                if (_clipboardKey == clipboardKey)
+                {
+                    menu.AddItem(new GUIContent("Paste"), false, () => Apply((keys, values) => PasteValue(values.GetArrayElementAtIndex(index), _clipboard)));
+                }
+                else
+                {
+                    menu.AddDisabledItem(new GUIContent("Paste"));
+                }
+
+                menu.AddSeparator(string.Empty);
+                menu.AddItem(new GUIContent("Delete"), false, () => Apply((keys, values) =>
+                {
+                    keys.DeleteArrayElementAtIndex(index);
+                    values.DeleteArrayElementAtIndex(index);
+                }));
+            }
+
+            menu.AddItem(new GUIContent("Clear"), false, () => Apply((keys, values) =>
+            {
+                keys.arraySize = 0;
+                values.arraySize = 0;
+            }));
+            menu.ShowAsContext();
+        }
+
+        private static float GetPairHeight(SerializedProperty keys, SerializedProperty values, int index)
+        {
+            var key = EditorGUI.GetPropertyHeight(keys.GetArrayElementAtIndex(index), GUIContent.none, true);
+            var value = GetDictionaryValueHeight(values.GetArrayElementAtIndex(index));
+
+            return Mathf.Max(EditorGUIUtility.singleLineHeight, key, value);
+        }
+
+        // Children of a [HideInInspector] list are flagged hidden, so NextVisible skips them: iterate with Next instead.
+        private static List<SerializedProperty> GetValueChildren(SerializedProperty value)
+        {
+            var result = new List<SerializedProperty>();
+
+            if (value.propertyType != SerializedPropertyType.Generic || value.isArray)
+            {
+                return result;
+            }
+
+            var type = value.boxedValue?.GetType();
+
+            if (type == null || HasTypeDrawer(type) || type.Namespace != null && (type.Namespace.StartsWith("UnityEngine") || type.Namespace.StartsWith("System")))
+            {
+                return result;
+            }
+
+            var iterator = value.Copy();
+            var end = iterator.GetEndProperty();
+
+            if (!iterator.Next(true))
+            {
+                return result;
+            }
+
+            do
+            {
+                if (iterator.depth <= value.depth || SerializedProperty.EqualContents(iterator, end))
+                {
+                    break;
+                }
+
+                result.Add(iterator.Copy());
+            }
+            while (iterator.Next(false));
+
+            return result;
+        }
+
+        private static float GetDictionaryValueHeight(SerializedProperty value)
+        {
+            var children = GetValueChildren(value);
+
+            if (children.Count == 0)
+            {
+                return GetElementHeight(value, true);
+            }
+
+            var height = 0f;
+
+            foreach (var child in children)
+            {
+                height += GetElementHeight(child, false) + EditorGUIUtility.standardVerticalSpacing;
+            }
+
+            return height - EditorGUIUtility.standardVerticalSpacing;
+        }
+
+        private static void DrawDictionaryValue(Rect rect, SerializedProperty value)
+        {
+            var children = GetValueChildren(value);
+
+            if (children.Count == 0)
+            {
+                Field(rect, value, GUIContent.none, true, true);
+
+                return;
+            }
+
+            var y = rect.y;
+
+            foreach (var child in children)
+            {
+                var childHeight = GetElementHeight(child, false);
+
+                Field(new Rect(rect.x, y, rect.width, childHeight), child, null, false, true);
+                y += childHeight + EditorGUIUtility.standardVerticalSpacing;
+            }
+        }
+
+        private static void DrawDictionary(Rect rect, SerializedProperty property)
+        {
+            EnsureExpanded(property);
+
+            rect.height = GetDictionaryHeight(property) - TopPadding;
+
+            var keys = property.FindPropertyRelative("keyData");
+            var values = property.FindPropertyRelative("valueData");
+
+            if (values.arraySize != keys.arraySize)
+            {
+                values.arraySize = keys.arraySize;
+            }
+
+            var count = keys.arraySize;
+            var headerBackground = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
+            var header = new Rect(rect.x, rect.y + HeaderPadding, rect.width, HeaderHeight);
+            var addRect = new Rect(header.xMax - ButtonWidth, header.y + (header.height - 18f) * 0.5f, ButtonWidth, 18f);
+            var countRect = new Rect(addRect.x - 74f, header.y, 70f, header.height);
+            var labelRect = new Rect(header.x + 18f, header.y, countRect.x - header.x - 18f, header.height);
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                EditorGUI.DrawRect(headerBackground, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                DrawBorder(rect);
+            }
+
+            if (Event.current.type == EventType.ContextClick && headerBackground.Contains(Event.current.mousePosition))
+            {
+                ShowDictionaryContextMenu(property, -1);
+                Event.current.Use();
+
+                return;
+            }
+
+            property.isExpanded = EditorGUI.Foldout(labelRect, property.isExpanded, PropertyUtility.GetLabel(property), true);
+
+            var countStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
+
+            if (count == 0)
+            {
+                countStyle.normal.textColor = Color.gray;
+            }
+
+            EditorGUI.LabelField(countRect, count == 0 ? "Empty" : (count == 1 ? "1 Element" : count + " Elements"), countStyle);
+
+            if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton))
+            {
+                AddEntry(keys, values);
+
+                return;
+            }
+
+            if (!property.isExpanded)
+            {
+                return;
+            }
+
+            var y = headerBackground.yMax + InnerPadding;
+
+            for (var i = 0; i < count; i++)
+            {
+                var height = GetPairHeight(keys, values, i);
+                var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing);
+                var contentX = rect.x + 8f;
+                var contentWidth = rect.width - 8f - ButtonWidth - 8f;
+                var keyWidth = contentWidth * 0.4f;
+                var keyRect = new Rect(contentX, y, keyWidth - 2f, height);
+                var valueRect = new Rect(contentX + keyWidth + 2f, y, contentWidth - keyWidth - 2f, height);
+                var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + (height - 20f) * 0.5f, ButtonWidth, 20f);
+
+                if (Event.current.type == EventType.Repaint)
+                {
+                    EditorGUI.DrawRect(rowRect, i % 2 == 0 ? EvenRowColor : OddRowColor);
+                }
+
+                if (Event.current.type == EventType.ContextClick && rowRect.Contains(Event.current.mousePosition))
+                {
+                    ShowDictionaryContextMenu(property, i);
+                    Event.current.Use();
+
+                    return;
+                }
+
+                var labelWidth = EditorGUIUtility.labelWidth;
+
+                EditorGUIUtility.labelWidth = Mathf.Min(labelWidth, 80f);
+                EditorGUI.PropertyField(keyRect, keys.GetArrayElementAtIndex(i), GUIContent.none, true);
+                DrawDictionaryValue(valueRect, values.GetArrayElementAtIndex(i));
+                EditorGUIUtility.labelWidth = labelWidth;
+
+                if (GUI.Button(removeRect, "x", RemoveStyle))
+                {
+                    keys.DeleteArrayElementAtIndex(i);
+                    values.DeleteArrayElementAtIndex(i);
+
+                    return;
+                }
+
+                y += height + Spacing;
+            }
+        }
+
+        public static float GetHeight(SerializedProperty property, bool flat = false, bool plain = false)
+        {
+            if (IsDictionary(property))
+            {
+                return GetDictionaryHeight(property);
+            }
+
+            if (IsContainer(property))
+            {
+                return GetContainerHeight(property, flat || IsInline(property), plain);
+            }
+
+            if (!IsList(property))
+            {
+                return EditorGUI.GetPropertyHeight(property, true);
+            }
+
+            EnsureExpanded(property);
+
+            var settings = GetSettings(property);
+            var height = GetListBodyHeight(property, settings);
+
+            return plain ? height : height + TopPadding;
+        }
+
+        private static float GetListBodyHeight(SerializedProperty property, ListDrawerSettingsAttribute settings)
+        {
+            var height = HeaderHeight + HeaderPadding * 2f;
+
+            if (!IsExpanded(property, settings) || property.arraySize == 0)
+            {
+                return height;
+            }
+
+            height += Spacing * 0.5f;
+
+            for (var i = 0; i < property.arraySize; i++)
+            {
+                height += GetElementHeight(property.GetArrayElementAtIndex(i), settings != null && !settings.ShowFoldout) + Spacing;
+            }
+
+            return height + BottomPadding;
+        }
+
+        public static void Field(Rect rect, SerializedProperty property, GUIContent label = null, bool flat = false, bool plain = false)
+        {
+            if (IsDictionary(property))
+            {
+                DrawDictionary(rect, property);
+            }
+            else if (IsList(property))
+            {
+                Draw(rect, property);
+            }
+            else if (IsContainer(property))
+            {
+                DrawContainer(rect, property, label, flat || IsInline(property), plain);
+            }
+            else if (label != null)
+            {
+                EditorGUI.PropertyField(rect, property, label, true);
+            }
+            else
+            {
+                EditorGUI.PropertyField(rect, property, true);
+            }
+        }
+
+        private static bool IsInline(SerializedProperty property)
+        {
+            return PropertyUtility.GetAttribute<InlinePropertyAttribute>(property) != null
+                || PropertyUtility.GetAttribute<HideLabelAttribute>(property) != null;
+        }
+
+        /// <summary>
+        /// True for serializable classes/structs without a custom drawer. They are drawn manually so that the lists they contain use this drawer.
+        /// </summary>
+        public static bool IsContainer(SerializedProperty property)
+        {
+            if (property.isArray || !property.hasVisibleChildren)
+            {
+                return false;
+            }
+
+            Type type;
+
+            if (property.propertyType == SerializedPropertyType.ManagedReference)
+            {
+                type = property.managedReferenceValue?.GetType();
+            }
+            else if (property.propertyType == SerializedPropertyType.Generic)
+            {
+                type = property.boxedValue?.GetType();
+            }
+            else
+            {
+                return false;
+            }
+
+            if (type == null || type.Namespace != null && (type.Namespace.StartsWith("UnityEngine") || type.Namespace.StartsWith("System")))
+            {
+                return false;
+            }
+
+            return !HasTypeDrawer(type);
+        }
+
+        private static List<(Type Type, bool UseForChildren)> _typeDrawers;
+        private static readonly Dictionary<Type, bool> TypeDrawerCache = new Dictionary<Type, bool>();
+
+        private static bool HasTypeDrawer(Type type)
+        {
+            if (TypeDrawerCache.TryGetValue(type, out var cached))
+            {
+                return cached;
+            }
+
+            if (_typeDrawers == null)
+            {
+                _typeDrawers = new List<(Type, bool)>();
+
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var typeField = typeof(CustomPropertyDrawer).GetField("m_Type", flags);
+                var childrenField = typeof(CustomPropertyDrawer).GetField("m_UseForChildren", flags);
+
+                foreach (var drawerType in TypeCache.GetTypesWithAttribute<CustomPropertyDrawer>())
+                {
+                    foreach (var attribute in drawerType.GetCustomAttributes<CustomPropertyDrawer>(true))
+                    {
+                        if (typeField?.GetValue(attribute) is Type target)
+                        {
+                            _typeDrawers.Add((target, childrenField != null && (bool) childrenField.GetValue(attribute)));
+                        }
+                    }
+                }
+            }
+
+            var result = _typeDrawers.Any(d => d.Type == type || d.UseForChildren && d.Type.IsAssignableFrom(type));
+
+            TypeDrawerCache[type] = result;
+
+            return result;
+        }
+
+        private static IEnumerable<SerializedProperty> GetChildren(SerializedProperty property)
+        {
+            var iterator = property.Copy();
+            var end = iterator.GetEndProperty();
+
+            if (!iterator.NextVisible(true))
+            {
+                yield break;
+            }
+
+            do
+            {
+                if (SerializedProperty.EqualContents(iterator, end))
+                {
+                    yield break;
+                }
+
+                if (PropertyUtility.IsVisible(iterator))
+                {
+                    yield return iterator.Copy();
+                }
+            }
+            while (iterator.NextVisible(false));
+        }
+
+        private static float GetContainerHeight(SerializedProperty property, bool flat, bool plain)
+        {
+            if (flat)
+            {
+                return GetRunsHeight(property);
+            }
+
+            if (plain)
+            {
+                return property.isExpanded
+                    ? EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + GetRunsHeight(property)
+                    : EditorGUIUtility.singleLineHeight;
+            }
+
+            var headerHeight = TopPadding + HeaderHeight + HeaderPadding * 2f;
+
+            if (!property.isExpanded)
+            {
+                return headerHeight;
+            }
+
+            return headerHeight + BoxPadding * 2f + GetRunsHeight(property);
+        }
+
+        private static float GetRunsHeight(SerializedProperty property)
+        {
+            var height = 0f;
+
+            foreach (var run in GetRuns(property))
+            {
+                if (run.Foldout == null)
+                {
+                    height += GetChildrenHeight(run.Children);
+
+                    continue;
+                }
+
+                var toggle = GetToggle(run.Children);
+                var body = GetBody(property, run.Foldout, run.Children, toggle);
+
+                if (run.Foldout.Clean)
+                {
+                    height += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+
+                    if (IsFoldoutOpen(property, run.Foldout.Name))
+                    {
+                        height += GetBodyHeight(toggle, body);
+                    }
+
+                    continue;
+                }
+
+                height += BoxHeaderHeight;
+
+                if (IsFoldoutOpen(property, run.Foldout.Name))
+                {
+                    height += BoxPadding * 2f + GetBodyHeight(toggle, body);
+                }
+
+                height += BoxPadding;
+            }
+
+            return height;
+        }
+
+        private const float BoxHeaderHeight = 22f;
+        private const float BoxPadding = 3f;
+
+        private static SerializedProperty GetToggle(List<SerializedProperty> children)
+        {
+            var first = children[0];
+
+            return first.propertyType == SerializedPropertyType.Boolean && PropertyUtility.GetAttribute<BoolTitleAttribute>(first) != null ? first : null;
+        }
+
+        private static List<SerializedProperty> GetBody(SerializedProperty property, FoldoutAttribute foldout, List<SerializedProperty> children, SerializedProperty toggle)
+        {
+            if (toggle == null)
+            {
+                return children;
+            }
+
+            if (toggle.boolValue)
+            {
+                return children.Skip(1).ToList();
+            }
+
+            var previous = PropertyUtility.ForceVisible;
+
+            PropertyUtility.ForceVisible = true;
+
+            var body = GetChildren(property)
+                .Where(c => c.propertyPath != toggle.propertyPath && PropertyUtility.GetAttribute<FoldoutAttribute>(c)?.Name == foldout.Name)
+                .ToList();
+
+            PropertyUtility.ForceVisible = previous;
+
+            return body;
+        }
+
+        private static float GetBodyHeight(SerializedProperty toggle, List<SerializedProperty> body)
+        {
+            var previous = PropertyUtility.ForceVisible;
+
+            PropertyUtility.ForceVisible = previous || (toggle != null && !toggle.boolValue);
+
+            var height = GetChildrenHeight(body);
+
+            PropertyUtility.ForceVisible = previous;
+
+            return height;
+        }
+
+        private static float GetChildrenHeight(List<SerializedProperty> children)
+        {
+            var height = 0f;
+
+            foreach (var child in children)
+            {
+                height += GetHeight(child) + EditorGUIUtility.standardVerticalSpacing;
+            }
+
+            return height;
+        }
+
+        private static List<(FoldoutAttribute Foldout, List<SerializedProperty> Children)> GetRuns(SerializedProperty property)
+        {
+            var runs = new List<(FoldoutAttribute Foldout, List<SerializedProperty> Children)>();
+
+            foreach (var child in GetChildren(property))
+            {
+                var foldout = PropertyUtility.GetAttribute<FoldoutAttribute>(child);
+
+                if (runs.Count > 0 && runs[runs.Count - 1].Foldout?.Name == foldout?.Name && (foldout != null || runs[runs.Count - 1].Foldout == null))
+                {
+                    runs[runs.Count - 1].Children.Add(child);
+                }
+                else
+                {
+                    runs.Add((foldout, new List<SerializedProperty> { child }));
+                }
+            }
+
+            return runs;
+        }
+
+        private static string GetFoldoutKey(SerializedProperty property, string name)
+        {
+            var target = property.serializedObject.targetObject;
+
+#if UNITY_6000_4_OR_NEWER
+            return $"NaughtyListDrawer.{EntityId.ToULong(target.GetEntityId())}.{property.propertyPath}.{name}";
+#else
+            return $"NaughtyListDrawer.{target.GetInstanceID()}.{property.propertyPath}.{name}";
+#endif
+        }
+
+        private static bool IsFoldoutOpen(SerializedProperty property, string name)
+        {
+            return SessionState.GetBool(GetFoldoutKey(property, name), false);
+        }
+
+        private static void DrawChildren(Rect rect, List<SerializedProperty> children, ref float y)
+        {
+            foreach (var child in children)
+            {
+                var height = GetHeight(child);
+
+                Field(new Rect(rect.x, y, rect.width, height), child);
+                y += height + EditorGUIUtility.standardVerticalSpacing;
+            }
+        }
+
+        private static bool DrawFoldoutHeader(Rect rect, bool open, FoldoutAttribute foldout, SerializedProperty toggle, bool bold)
+        {
+            if (toggle == null)
+            {
+                return EditorGUI.Foldout(rect, open, foldout.Name, true);
+            }
+
+            var boolTitle = PropertyUtility.GetAttribute<BoolTitleAttribute>(toggle);
+            var content = new GUIContent(boolTitle.Title ?? toggle.displayName, toggle.tooltip);
+            var arrowWidth = 12f;
+
+            open = EditorGUI.Foldout(new Rect(rect.x, rect.y, arrowWidth, rect.height), open, GUIContent.none, true);
+
+            EditorGUI.BeginProperty(rect, content, toggle);
+            toggle.boolValue = EditorGUI.ToggleLeft(new Rect(rect.x + arrowWidth, rect.y, rect.width - arrowWidth, rect.height), content, toggle.boolValue, bold ? EditorStyles.boldLabel : EditorStyles.label);
+            EditorGUI.EndProperty();
+
+            return open;
+        }
+
+        private static void DrawBody(Rect rect, List<SerializedProperty> body, SerializedProperty toggle, ref float y)
+        {
+            if (toggle == null)
+            {
+                DrawChildren(rect, body, ref y);
+
+                return;
+            }
+
+            var previous = PropertyUtility.ForceVisible;
+            var enabled = toggle.boolValue;
+
+            PropertyUtility.ForceVisible = previous || !enabled;
+
+            using (new EditorGUI.DisabledScope(!enabled))
+            {
+                DrawChildren(rect, body, ref y);
+            }
+
+            PropertyUtility.ForceVisible = previous;
+        }
+
+        private static void DrawFoldoutRun(Rect rect, SerializedProperty property, FoldoutAttribute foldout, List<SerializedProperty> children, ref float y)
+        {
+            var key = GetFoldoutKey(property, foldout.Name);
+            var open = SessionState.GetBool(key, false);
+            var toggle = GetToggle(children);
+            var body = GetBody(property, foldout, children, toggle);
+
+            if (foldout.Clean)
+            {
+                var line = new Rect(rect.x, y, rect.width, EditorGUIUtility.singleLineHeight);
+
+                open = DrawFoldoutHeader(line, open, foldout, toggle, false);
+                SessionState.SetBool(key, open);
+                y += line.height + EditorGUIUtility.standardVerticalSpacing;
+
+                if (open)
+                {
+                    DrawBody(new Rect(rect.x + 8f, rect.y, rect.width - 8f, rect.height), body, toggle, ref y);
+                }
+
+                return;
+            }
+
+            var isPro = EditorGUIUtility.isProSkin;
+            var header = new Rect(rect.x, y, rect.width, BoxHeaderHeight);
+            var headerColor = isPro ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f);
+            var contentColor = isPro ? new Color(0.19f, 0.19f, 0.19f) : new Color(0.78f, 0.78f, 0.78f);
+
+            EditorGUI.DrawRect(header, headerColor);
+
+            var foldoutRect = new Rect(header.x + 14f, header.y + 3f, header.width - 14f, EditorGUIUtility.singleLineHeight);
+
+            open = DrawFoldoutHeader(foldoutRect, open, foldout, toggle, true);
+            SessionState.SetBool(key, open);
+            y += BoxHeaderHeight;
+
+            if (open)
+            {
+                var contentHeight = BoxPadding * 2f + GetBodyHeight(toggle, body);
+
+                EditorGUI.DrawRect(new Rect(rect.x, y, rect.width, contentHeight), contentColor);
+                y += BoxPadding;
+
+                DrawBody(new Rect(rect.x + 16f, rect.y, rect.width - 20f, rect.height), body, toggle, ref y);
+                y += BoxPadding;
+            }
+
+            DrawBorder(new Rect(rect.x, header.y, rect.width, y - header.y));
+            y += BoxPadding;
+        }
+
+        private static void DrawContainer(Rect rect, SerializedProperty property, GUIContent label, bool flat, bool plain)
+        {
+            var y = rect.y;
+
+            if (plain && !flat)
+            {
+                var line = new Rect(rect.x + 16f, rect.y, rect.width - 16f, EditorGUIUtility.singleLineHeight);
+
+                property.isExpanded = EditorGUI.Foldout(line, property.isExpanded, label ?? PropertyUtility.GetLabel(property), true);
+
+                if (!property.isExpanded)
+                {
+                    return;
+                }
+
+                y = line.yMax + EditorGUIUtility.standardVerticalSpacing;
+
+                var plainInner =                                 new Rect(rect.x + 30f, rect.y, rect.width - 30f, rect.height);
+
+                foreach (var run in GetRuns(property))
+                {
+                    if (run.Foldout == null)
+                    {
+                        DrawChildren(plainInner, run.Children, ref y);
+                    }
+                    else
+                    {
+                        DrawFoldoutRun(plainInner, property, run.Foldout, run.Children, ref y);
+                    }
+                }
+
+                return;
+            }
+
+            if (!flat)
+            {
+                var isPro = EditorGUIUtility.isProSkin;
+                rect.y += TopPadding;
+                rect.height -= TopPadding;
+
+                var header = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
+
+                EditorGUI.DrawRect(header, isPro ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+
+                var line = new Rect(header.x + 18f, header.y + HeaderPadding + (HeaderHeight - EditorGUIUtility.singleLineHeight) * 0.5f, header.width - 18f, EditorGUIUtility.singleLineHeight);
+
+                property.isExpanded = EditorGUI.Foldout(line, property.isExpanded, label ?? PropertyUtility.GetLabel(property), true);
+
+                if (!property.isExpanded)
+                {
+                    DrawBorder(header);
+
+                    return;
+                }
+
+                var contentHeight = BoxPadding * 2f + GetRunsHeight(property);
+
+                EditorGUI.DrawRect(new Rect(rect.x, header.yMax, rect.width, contentHeight), isPro ? new Color(0.19f, 0.19f, 0.19f) : new Color(0.78f, 0.78f, 0.78f));
+                DrawBorder(new Rect(rect.x, rect.y, rect.width, header.height + contentHeight));
+                y = header.yMax + BoxPadding;
+            }
+
+            var indent = flat ? 0f : 14f;
+
+            var inner = new Rect(rect.x + indent, rect.y, rect.width - indent * 2f, rect.height);
+
+            foreach (var run in GetRuns(property))
+            {
+                if (run.Foldout == null)
+                {
+                    DrawChildren(inner, run.Children, ref y);
+                }
+                else
+                {
+                    DrawFoldoutRun(inner, property, run.Foldout, run.Children, ref y);
+                }
+            }
+        }
+
+        public static void Draw(Rect rect, SerializedProperty property)
+        {
+            EnsureExpanded(property);
+
+            var field = GetField(property);
+            var settings = GetSettings(property);
+            var isReference = field != null && field.GetCustomAttribute<SerializeReference>() != null;
+            var elementType = GetElementType(field != null ? field.FieldType : null);
+            var showFoldout = true;
+            var showIndex = settings != null && settings.ShowIndexLabels;
+            var flat = settings != null && !settings.ShowFoldout;
+            var label = PropertyUtility.GetLabel(property);
+
+            rect.height = GetListBodyHeight(property, settings);
+
+            var headerBackground = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
+            var header = new Rect(rect.x, rect.y + HeaderPadding, rect.width, HeaderHeight);
+            var addRect = new Rect(header.xMax - ButtonWidth, header.y + (header.height - 18f) * 0.5f, ButtonWidth, 18f);
+            var countRect = new Rect(addRect.x - 74f, header.y, 70f, header.height);
+            var labelRect = new Rect(header.x + 18f, header.y, countRect.x - header.x - 18f, header.height);
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                EditorGUI.DrawRect(headerBackground, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                DrawBorder(rect);
+            }
+
+            if (Event.current.type == EventType.ContextClick && headerBackground.Contains(Event.current.mousePosition))
+            {
+                ShowContextMenu(property, -1);
+                Event.current.Use();
+
+                return;
+            }
+
+            if (showFoldout)
+            {
+                property.isExpanded = EditorGUI.Foldout(labelRect, property.isExpanded, label, true);
+            }
+            else
+            {
+                EditorGUI.LabelField(labelRect, label, EditorStyles.boldLabel);
+            }
+
+            var countStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
+
+            if (property.arraySize == 0)
+            {
+                countStyle.normal.textColor = Color.gray;
+            }
+
+            EditorGUI.LabelField(countRect, property.arraySize == 0 ? "Empty" : (property.arraySize == 1 ? "1 Element" : property.arraySize + " Elements"), countStyle);
+
+            if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton))
+            {
+                Add(property, settings, isReference, elementType);
+
+                return;
+            }
+
+            HandleObjectDrop(rect, property, isReference, elementType);
+
+            if (!IsExpanded(property, settings))
+            {
+                return;
+            }
+
+            var y = headerBackground.yMax + Spacing * 0.5f;
+            var controlId = GUIUtility.GetControlID(FocusType.Passive);
+            var key = property.serializedObject.targetObject.GetEntityId() + property.propertyPath;
+            var elementRects = new List<Rect>();
+
+            for (var i = 0; i < property.arraySize; i++)
+            {
+                var element = property.GetArrayElementAtIndex(i);
+                var height = GetElementHeight(element, flat);
+                var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing);
+                var fieldRect = new Rect(rect.x + ElementIndent, y, rect.width - ElementIndent - ButtonWidth - 4f, height);
+                var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + (height - 20f) * 0.5f, ButtonWidth, 20f);
+                var handleRect = new Rect(rect.x + 6f, y, 16f, height);
+
+                elementRects.Add(rowRect);
+
+                if (Event.current.type == EventType.Repaint)
+                {
+                    EditorGUI.DrawRect(rowRect, i % 2 == 0 ? EvenRowColor : OddRowColor);
+                    GUI.Label(handleRect, "=", HandleStyle);
+                }
+
+                if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && handleRect.Contains(Event.current.mousePosition))
+                {
+                    GUIUtility.hotControl = controlId;
+                    _dragKey = key;
+                    _dragIndex = i;
+                    _dragTarget = i;
+                    Event.current.Use();
+                }
+
+                EditorGUIUtility.AddCursorRect(handleRect, MouseCursor.Pan);
+
+                if (Event.current.type == EventType.ContextClick && rowRect.Contains(Event.current.mousePosition))
+                {
+                    ShowContextMenu(property, i);
+                    Event.current.Use();
+
+                    return;
+                }
+
+                if (IsNullReference(element))
+                {
+                    var elementPath = element.propertyPath;
+                    var serializedObject = property.serializedObject;
+                    var buttonRect = new Rect(fieldRect.x, fieldRect.y, fieldRect.width, EditorGUIUtility.singleLineHeight);
+
+                    if (EditorGUI.DropdownButton(buttonRect, new GUIContent($"[{i}] Select type..."), FocusType.Keyboard))
+                    {
+                        ShowTypeMenu(elementType, type =>
+                        {
+                            serializedObject.Update();
+                            serializedObject.FindProperty(elementPath).managedReferenceValue = Activator.CreateInstance(type);
+                            serializedObject.ApplyModifiedProperties();
+                        });
+                    }
+                }
+                else
+                {
+                    var elementLabel = showIndex ? new GUIContent(i.ToString()) : (element.displayName.StartsWith("Element ") ? GUIContent.none : new GUIContent(element.displayName));
+
+                    Field(fieldRect, element, elementLabel, flat, true);
+                }
+
+                if (GUI.Button(removeRect, "x", RemoveStyle))
+                {
+                    Remove(property, i);
+
+                    return;
+                }
+
+                y += height + Spacing;
+            }
+
+            HandleDrag(property, key, controlId, elementRects);
+        }
+
+        // Lets assets be dropped on a list of UnityEngine.Object references (a texture adds all of its sprites)
+        private static void HandleObjectDrop(Rect rect, SerializedProperty property, bool isReference, Type elementType)
+        {
+            var current = Event.current;
+
+            if (isReference || elementType == null || !typeof(UnityEngine.Object).IsAssignableFrom(elementType) || !GUI.enabled)
+            {
+                return;
+            }
+
+            if (current.type != EventType.DragUpdated && current.type != EventType.DragPerform || !rect.Contains(current.mousePosition))
+            {
+                return;
+            }
+
+            var assets = new List<UnityEngine.Object>();
+
+            foreach (var obj in DragAndDrop.objectReferences)
+            {
+                if (obj == null)
+                {
+                    continue;
+                }
+
+                if (elementType.IsInstanceOfType(obj))
+                {
+                    assets.Add(obj);
+                }
+                else if (elementType == typeof(Sprite) && obj is Texture2D)
+                {
+                    assets.AddRange(AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(obj)).OfType<Sprite>());
+                }
+            }
+
+            if (assets.Count == 0)
+            {
+                return;
+            }
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+
+            if (current.type == EventType.DragPerform)
+            {
+                DragAndDrop.AcceptDrag();
+
+                foreach (var asset in assets)
+                {
+                    property.arraySize++;
+                    property.GetArrayElementAtIndex(property.arraySize - 1).objectReferenceValue = asset;
+                }
+
+                GUI.changed = true;
+            }
+
+            current.Use();
+        }
+
+        private static void HandleDrag(SerializedProperty property, string key, int controlId, List<Rect> elementRects)
+        {
+            if (_dragKey != key || GUIUtility.hotControl != controlId || elementRects.Count == 0)
+            {
+                return;
+            }
+
+            var current = Event.current;
+
+            if (current.type == EventType.MouseDrag)
+            {
+                var mouseY = current.mousePosition.y;
+                var target = elementRects.Count - 1;
+
+                for (var i = 0; i < elementRects.Count; i++)
+                {
+                    if (mouseY < elementRects[i].yMax)
+                    {
+                        target = i;
+
+                        break;
+                    }
+                }
+
+                _dragTarget = target;
+                current.Use();
+                GUI.changed = true;
+            }
+            else if (current.type == EventType.MouseUp)
+            {
+                GUIUtility.hotControl = 0;
+
+                if (_dragTarget != _dragIndex && _dragIndex < property.arraySize && _dragTarget < property.arraySize)
+                {
+                    property.MoveArrayElement(_dragIndex, _dragTarget);
+                    GUI.changed = true;
+                }
+
+                _dragKey = null;
+                current.Use();
+            }
+            else if (current.type == EventType.Repaint && _dragTarget < elementRects.Count)
+            {
+                var targetRect = elementRects[_dragTarget];
+                var lineY = _dragTarget > _dragIndex ? targetRect.yMax - 1f : targetRect.y;
+
+                EditorGUI.DrawRect(new Rect(targetRect.x, lineY, targetRect.width, 2f), Color.white);
+            }
+        }
+
+        public static void DrawOutline(Rect rect)
+        {
+            DrawBorder(rect);
+        }
+
+        private static void DrawBorder(Rect rect)
+        {
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), BorderColor);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), BorderColor);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), BorderColor);
+            EditorGUI.DrawRect(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), BorderColor);
+        }
+
+        private static bool IsExpanded(SerializedProperty property, ListDrawerSettingsAttribute settings)
+        {
+            return property.isExpanded;
+        }
+
+        // The expanded state is kept by Unity (isExpanded), so it is not forced anymore
+        private static void EnsureExpanded(SerializedProperty property)
+        {
+        }
+
+        private static bool IsNullReference(SerializedProperty element)
+        {
+            return element.propertyType == SerializedPropertyType.ManagedReference && element.managedReferenceValue == null;
+        }
+
+        private static float GetElementHeight(SerializedProperty element, bool flat)
+        {
+            if (IsNullReference(element))
+            {
+                return EditorGUIUtility.singleLineHeight;
+            }
+
+            return GetHeight(element, flat, true);
+        }
+
+        private static FieldInfo GetField(SerializedProperty property)
+        {
+            var owner = PropertyUtility.GetTargetObjectWithProperty(property);
+
+            return owner == null ? null : ReflectionUtility.GetField(owner, property.name);
+        }
+
+        private static ListDrawerSettingsAttribute GetSettings(SerializedProperty property)
+        {
+            return PropertyUtility.GetAttribute<ListDrawerSettingsAttribute>(property);
+        }
+
+        private static Type GetElementType(Type type)
+        {
+            if (type == null)
+            {
+                return typeof(object);
+            }
+
+            if (type.IsArray)
+            {
+                return type.GetElementType();
+            }
+
+            if (type.IsGenericType)
+            {
+                return type.GetGenericArguments()[0];
+            }
+
+            return type;
+        }
+
+        private static void Remove(SerializedProperty array, int index)
+        {
+            var element = array.GetArrayElementAtIndex(index);
+
+            if (element.propertyType == SerializedPropertyType.ObjectReference && element.objectReferenceValue != null)
+            {
+                element.objectReferenceValue = null;
+            }
+
+            array.DeleteArrayElementAtIndex(index);
+            GUI.changed = true;
+        }
+
+        private static void Add(SerializedProperty array, ListDrawerSettingsAttribute settings, bool isReference, Type elementType)
+        {
+            var serializedObject = array.serializedObject;
+
+            if (settings != null && !string.IsNullOrEmpty(settings.CustomAddFunction))
+            {
+                var owner = PropertyUtility.GetTargetObjectWithProperty(array);
+                var method = owner?.GetType().GetMethod(
+                    settings.CustomAddFunction,
+                    BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+                if (method != null)
+                {
+                    serializedObject.ApplyModifiedProperties();
+                    Undo.RecordObject(serializedObject.targetObject, "Add element");
+                    method.Invoke(method.IsStatic ? null : owner, null);
+                    EditorUtility.SetDirty(serializedObject.targetObject);
+                    serializedObject.Update();
+
+                    return;
+                }
+            }
+
+            if (!isReference)
+            {
+                var referenceField = FindReferenceField(elementType);
+
+                if (referenceField == null || GetTypes(referenceField.FieldType).Count <= 1)
+                {
+                    array.arraySize++;
+                    GUI.changed = true;
+
+                    return;
+                }
+
+                var arrayPath = array.propertyPath;
+
+                ShowTypeMenu(referenceField.FieldType, type =>
+                {
+                    serializedObject.Update();
+
+                    var list = serializedObject.FindProperty(arrayPath);
+
+                    list.arraySize++;
+                    list.GetArrayElementAtIndex(list.arraySize - 1).FindPropertyRelative(referenceField.Name).managedReferenceValue = Activator.CreateInstance(type);
+                    serializedObject.ApplyModifiedProperties();
+                });
+
+                return;
+            }
+
+            var types = GetTypes(elementType);
+
+            if (types.Count == 1)
+            {
+                AddReference(array, types[0]);
+
+                return;
+            }
+
+            var path = array.propertyPath;
+
+            ShowTypeMenu(elementType, type =>
+            {
+                serializedObject.Update();
+                AddReference(serializedObject.FindProperty(path), type);
+                serializedObject.ApplyModifiedProperties();
+            });
+        }
+
+        // First [SerializeReference] field of a plain serializable element, used to ask for its type when adding
+        private static FieldInfo FindReferenceField(Type elementType)
+        {
+            if (elementType == null || elementType.IsPrimitive || elementType.IsEnum || elementType == typeof(string) || typeof(UnityEngine.Object).IsAssignableFrom(elementType))
+            {
+                return null;
+            }
+
+            return elementType
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .FirstOrDefault(f => f.GetCustomAttribute<SerializeReference>() != null);
+        }
+
+        // Inserts a deep copy of the element right after it, so references are never shared
+        private static void Duplicate(SerializedProperty list, int index)
+        {
+            var source = list.GetArrayElementAtIndex(index);
+            object copy = null;
+
+            if (source.propertyType == SerializedPropertyType.ManagedReference && source.managedReferenceValue != null)
+            {
+                copy = Clone(source.managedReferenceValue);
+            }
+            else if (source.propertyType == SerializedPropertyType.Generic && source.boxedValue != null)
+            {
+                copy = Clone(source.boxedValue);
+            }
+
+            list.InsertArrayElementAtIndex(index);
+
+            if (copy == null)
+            {
+                return;
+            }
+
+            var target = list.GetArrayElementAtIndex(index + 1);
+
+            if (target.propertyType == SerializedPropertyType.ManagedReference)
+            {
+                target.managedReferenceValue = copy;
+            }
+            else
+            {
+                target.boxedValue = copy;
+            }
+        }
+
+        private static object Clone(object value)
+        {
+            var type = value.GetType();
+
+            return JsonUtility.FromJson(JsonUtility.ToJson(value), type);
+        }
+
+        private static object _clipboard;
+        private static string _clipboardKey;
+
+        private static object CopyValue(SerializedProperty element)
+        {
+            if (element.propertyType == SerializedPropertyType.ManagedReference)
+            {
+                return element.managedReferenceValue == null ? null : Clone(element.managedReferenceValue);
+            }
+
+            if (element.propertyType == SerializedPropertyType.Generic)
+            {
+                return element.boxedValue == null ? null : Clone(element.boxedValue);
+            }
+
+            return element.boxedValue;
+        }
+
+        private static void PasteValue(SerializedProperty element, object value)
+        {
+            if (element.propertyType == SerializedPropertyType.ManagedReference)
+            {
+                element.managedReferenceValue = value == null ? null : Clone(value);
+            }
+            else if (element.propertyType == SerializedPropertyType.Generic)
+            {
+                element.boxedValue = value == null ? null : Clone(value);
+            }
+            else
+            {
+                element.boxedValue = value;
+            }
+        }
+
+        private static void ShowContextMenu(SerializedProperty property, int index)
+        {
+            var serializedObject = property.serializedObject;
+            var path = property.propertyPath;
+            var menu = new GenericMenu();
+
+            void Apply(Action<SerializedProperty> action)
+            {
+                serializedObject.Update();
+                action(serializedObject.FindProperty(path));
+                serializedObject.ApplyModifiedProperties();
+            }
+
+            var key = property.arrayElementType;
+            var canPaste = _clipboardKey == key;
+
+            if (index >= 0)
+            {
+                var copied = CopyValue(property.GetArrayElementAtIndex(index));
+
+                menu.AddItem(new GUIContent("Copy"), false, () =>
+                {
+                    _clipboard = copied;
+                    _clipboardKey = key;
+                });
+
+                if (canPaste)
+                {
+                    menu.AddItem(new GUIContent("Paste"), false, () => Apply(list => PasteValue(list.GetArrayElementAtIndex(index), _clipboard)));
+                }
+                else
+                {
+                    menu.AddDisabledItem(new GUIContent("Paste"));
+                }
+
+                menu.AddSeparator(string.Empty);
+            }
+            else if (canPaste)
+            {
+                menu.AddItem(new GUIContent("Paste as new element"), false, () => Apply(list =>
+                {
+                    list.arraySize++;
+                    PasteValue(list.GetArrayElementAtIndex(list.arraySize - 1), _clipboard);
+                }));
+                menu.AddSeparator(string.Empty);
+            }
+
+            if (index >= 0)
+            {
+                menu.AddItem(new GUIContent("Duplicate"), false, () => Apply(list => Duplicate(list, index)));
+                menu.AddItem(new GUIContent("Delete"), false, () => Apply(list => Remove(list, index)));
+
+                if (index > 0)
+                {
+                    menu.AddItem(new GUIContent("Move up"), false, () => Apply(list => list.MoveArrayElement(index, index - 1)));
+                }
+                else
+                {
+                    menu.AddDisabledItem(new GUIContent("Move up"));
+                }
+
+                if (index < property.arraySize - 1)
+                {
+                    menu.AddItem(new GUIContent("Move down"), false, () => Apply(list => list.MoveArrayElement(index, index + 1)));
+                }
+                else
+                {
+                    menu.AddDisabledItem(new GUIContent("Move down"));
+                }
+            }
+
+            menu.AddSeparator(string.Empty);
+            menu.AddItem(new GUIContent("Clear"), false, () => Apply(list => list.arraySize = 0));
+            menu.ShowAsContext();
+        }
+
+        private static void AddReference(SerializedProperty array, Type type)
+        {
+            array.arraySize++;
+            array.GetArrayElementAtIndex(array.arraySize - 1).managedReferenceValue = Activator.CreateInstance(type);
+            GUI.changed = true;
+        }
+
+        private static List<Type> GetTypes(Type baseType)
+        {
+            var types = TypeCache.GetTypesDerivedFrom(baseType).ToList();
+
+            if (!baseType.IsInterface)
+            {
+                types.Add(baseType);
+            }
+
+            return types
+                .Where(t => !t.IsAbstract && !t.IsInterface && !t.IsGenericType && !typeof(UnityEngine.Object).IsAssignableFrom(t))
+                .OrderBy(t => t.Name)
+                .ToList();
+        }
+
+        private static void ShowTypeMenu(Type baseType, Action<Type> onSelected)
+        {
+            var types = GetTypes(baseType);
+            var menu = new GenericMenu();
+
+            if (types.Count == 0)
+            {
+                menu.AddDisabledItem(new GUIContent("No type available"));
+            }
+
+            foreach (var type in types)
+            {
+                var captured = type;
+
+                menu.AddItem(new GUIContent(ObjectNames.NicifyVariableName(type.Name)), false, () => onSelected(captured));
+            }
+
+            menu.ShowAsContext();
+        }
+    }
+}
