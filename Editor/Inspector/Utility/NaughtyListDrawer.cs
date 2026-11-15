@@ -182,16 +182,46 @@ namespace ColorlessCore.Inspector.Editor
             menu.ShowAsContext();
         }
 
+        private static readonly Dictionary<(int Object, string Path), float> PairHeightCache = new();
+        private static readonly Dictionary<(int Object, string Path), List<SerializedProperty>> ValueChildrenCache = new();
+
         private static float GetPairHeight(SerializedProperty keys, SerializedProperty values, int index)
         {
-            var key = EditorGUI.GetPropertyHeight(keys.GetArrayElementAtIndex(index), GUIContent.none, true);
-            var value = GetDictionaryValueHeight(values.GetArrayElementAtIndex(index));
+            var valueElement = values.GetArrayElementAtIndex(index);
+            var cacheKey = (values.serializedObject.GetHashCode(), valueElement.propertyPath);
 
-            return Mathf.Max(EditorGUIUtility.singleLineHeight, key, value);
+            if (PairHeightCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached;
+            }
+
+            var key = EditorGUI.GetPropertyHeight(keys.GetArrayElementAtIndex(index), GUIContent.none, true);
+            var value = GetDictionaryValueHeight(valueElement);
+            var result = Mathf.Max(EditorGUIUtility.singleLineHeight, key, value);
+
+            PairHeightCache[cacheKey] = result;
+
+            return result;
+        }
+
+        private static List<SerializedProperty> GetValueChildren(SerializedProperty value)
+        {
+            var cacheKey = (value.serializedObject.GetHashCode(), value.propertyPath);
+
+            if (ValueChildrenCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached;
+            }
+
+            var result = ComputeValueChildren(value);
+
+            ValueChildrenCache[cacheKey] = result;
+
+            return result;
         }
 
         // Children of a [HideInInspector] list are flagged hidden, so NextVisible skips them: iterate with Next instead.
-        private static List<SerializedProperty> GetValueChildren(SerializedProperty value)
+        private static List<SerializedProperty> ComputeValueChildren(SerializedProperty value)
         {
             var result = new List<SerializedProperty>();
 
@@ -270,11 +300,26 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
+        private static readonly System.Reflection.PropertyInfo VisibleRectProperty =
+            typeof(GUI).Assembly.GetType("UnityEngine.GUIClip")?.GetProperty("visibleRect", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+
+        private static Rect GetVisibleRect()
+        {
+            if (VisibleRectProperty == null)
+            {
+                return new Rect(-100000f, -100000f, 200000f, 200000f);
+            }
+
+            return (Rect) VisibleRectProperty.GetValue(null);
+        }
+
+        private static GUIStyle _countStyle;
+
         private static void DrawDictionary(Rect rect, SerializedProperty property)
         {
             EnsureExpanded(property);
 
-            rect.height = GetDictionaryHeight(property) - TopPadding;
+            rect.height = GetHeight(property) - TopPadding;
 
             var keys = property.FindPropertyRelative("keyData");
             var values = property.FindPropertyRelative("valueData");
@@ -307,12 +352,11 @@ namespace ColorlessCore.Inspector.Editor
 
             property.isExpanded = EditorGUI.Foldout(labelRect, property.isExpanded, PropertyUtility.GetLabel(property), true);
 
-            var countStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
+            _countStyle ??= new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
 
-            if (count == 0)
-            {
-                countStyle.normal.textColor = Color.gray;
-            }
+            var countStyle = _countStyle;
+
+            countStyle.normal.textColor = count == 0 ? Color.gray : EditorStyles.miniLabel.normal.textColor;
 
             EditorGUI.LabelField(countRect, count == 0 ? "Empty" : (count == 1 ? "1 Element" : count + " Elements"), countStyle);
 
@@ -329,6 +373,13 @@ namespace ColorlessCore.Inspector.Editor
             }
 
             var y = headerBackground.yMax + InnerPadding;
+            var visible = GetVisibleRect();
+            var eventType = Event.current.type;
+
+            // Skip off-screen rows only when no control is focused, so control ids stay consistent for editing.
+            var cull = (eventType == EventType.Repaint || eventType == EventType.Layout)
+                       && GUIUtility.keyboardControl == 0
+                       && GUIUtility.hotControl == 0;
 
             for (var i = 0; i < count; i++)
             {
@@ -354,6 +405,13 @@ namespace ColorlessCore.Inspector.Editor
                     return;
                 }
 
+                if (cull && (rowRect.yMax < visible.yMin || rowRect.yMin > visible.yMax))
+                {
+                    y += height + Spacing;
+
+                    continue;
+                }
+
                 var labelWidth = EditorGUIUtility.labelWidth;
 
                 EditorGUIUtility.labelWidth = Mathf.Min(labelWidth, 80f);
@@ -373,7 +431,40 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
+        private static readonly Dictionary<(int Object, string Path, int Flags), float> HeightCache = new();
+
+        /// <summary>
+        /// Clears the per-event height cache. Must be called at the start of every inspector OnGUI.
+        /// </summary>
+        public static void ClearHeightCache()
+        {
+            HeightCache.Clear();
+            RunsCache.Clear();
+            BodyCache.Clear();
+            PairHeightCache.Clear();
+            ValueChildrenCache.Clear();
+            PropertyUtility.ClearVisibilityCache();
+        }
+
+        private static readonly Dictionary<(int Object, string Path, int Flags), List<(FoldoutAttribute Foldout, List<SerializedProperty> Children)>> RunsCache = new();
+
         public static float GetHeight(SerializedProperty property, bool flat = false, bool plain = false)
+        {
+            var key = (property.serializedObject.GetHashCode(), property.propertyPath, (flat ? 1 : 0) | (plain ? 2 : 0) | (PropertyUtility.ForceVisible ? 4 : 0));
+
+            if (HeightCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var result = ComputeHeight(property, flat, plain);
+
+            HeightCache[key] = result;
+
+            return result;
+        }
+
+        private static float ComputeHeight(SerializedProperty property, bool flat, bool plain)
         {
             if (IsDictionary(property))
             {
@@ -461,11 +552,11 @@ namespace ColorlessCore.Inspector.Editor
 
             if (property.propertyType == SerializedPropertyType.ManagedReference)
             {
-                type = property.managedReferenceValue?.GetType();
+                type = ResolveManagedReferenceType(property.managedReferenceFullTypename) ?? property.managedReferenceValue?.GetType();
             }
             else if (property.propertyType == SerializedPropertyType.Generic)
             {
-                type = property.boxedValue?.GetType();
+                type = ResolveDeclaredType(property) ?? property.boxedValue?.GetType();
             }
             else
             {
@@ -478,6 +569,94 @@ namespace ColorlessCore.Inspector.Editor
             }
 
             return !HasTypeDrawer(type);
+        }
+
+        private static readonly Dictionary<string, Type> ManagedTypeCache = new Dictionary<string, Type>();
+        private static readonly Dictionary<(Type, string), Type> DeclaredTypeCache = new Dictionary<(Type, string), Type>();
+
+        private static Type ResolveManagedReferenceType(string fullTypename)
+        {
+            if (string.IsNullOrEmpty(fullTypename))
+            {
+                return null;
+            }
+
+            if (ManagedTypeCache.TryGetValue(fullTypename, out var cached))
+            {
+                return cached;
+            }
+
+            Type result = null;
+            var separator = fullTypename.IndexOf(' ');
+
+            if (separator > 0)
+            {
+                var assemblyName = fullTypename.Substring(0, separator);
+                var typeName = fullTypename.Substring(separator + 1).Replace('/', '+');
+
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (assembly.GetName().Name == assemblyName)
+                    {
+                        result = assembly.GetType(typeName);
+
+                        break;
+                    }
+                }
+            }
+
+            ManagedTypeCache[fullTypename] = result;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Resolves the declared type of a property by walking its path with reflection, which avoids copying the whole value with boxedValue.
+        /// Returns null when the path cannot be resolved.
+        /// </summary>
+        private static Type ResolveDeclaredType(SerializedProperty property)
+        {
+            var target = property.serializedObject.targetObject;
+
+            if (target == null)
+            {
+                return null;
+            }
+
+            var path = System.Text.RegularExpressions.Regex.Replace(property.propertyPath, @"\[\d+\]", "[]");
+            var key = (target.GetType(), path);
+
+            if (DeclaredTypeCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var current = target.GetType();
+            var parts = path.Split('.');
+
+            for (var i = 0; i < parts.Length && current != null; i++)
+            {
+                if (parts[i] == "Array" && i + 1 < parts.Length && parts[i + 1] == "data[]")
+                {
+                    current = current.IsArray ? current.GetElementType() : current.IsGenericType ? current.GetGenericArguments()[0] : null;
+                    i++;
+
+                    continue;
+                }
+
+                FieldInfo field = null;
+
+                for (var type = current; type != null && field == null; type = type.BaseType)
+                {
+                    field = type.GetField(parts[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                }
+
+                current = field?.FieldType;
+            }
+
+            DeclaredTypeCache[key] = current;
+
+            return current;
         }
 
         private static List<(Type Type, bool UseForChildren)> _typeDrawers;
@@ -617,7 +796,30 @@ namespace ColorlessCore.Inspector.Editor
             return first.propertyType == SerializedPropertyType.Boolean && PropertyUtility.GetAttribute<BoolTitleAttribute>(first) != null ? first : null;
         }
 
+        private static readonly Dictionary<(int Object, string Path, string Foldout, int Flags), List<SerializedProperty>> BodyCache = new();
+
         private static List<SerializedProperty> GetBody(SerializedProperty property, FoldoutAttribute foldout, List<SerializedProperty> children, SerializedProperty toggle)
+        {
+            if (toggle == null)
+            {
+                return children;
+            }
+
+            var key = (property.serializedObject.GetHashCode(), property.propertyPath, foldout.Name, (PropertyUtility.ForceVisible ? 1 : 0) | (toggle.boolValue ? 2 : 0));
+
+            if (BodyCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var body = ComputeBody(property, foldout, children, toggle);
+
+            BodyCache[key] = body;
+
+            return body;
+        }
+
+        private static List<SerializedProperty> ComputeBody(SerializedProperty property, FoldoutAttribute foldout, List<SerializedProperty> children, SerializedProperty toggle)
         {
             if (toggle == null)
             {
@@ -668,6 +870,22 @@ namespace ColorlessCore.Inspector.Editor
         }
 
         private static List<(FoldoutAttribute Foldout, List<SerializedProperty> Children)> GetRuns(SerializedProperty property)
+        {
+            var key = (property.serializedObject.GetHashCode(), property.propertyPath, PropertyUtility.ForceVisible ? 1 : 0);
+
+            if (RunsCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var runs = ComputeRuns(property);
+
+            RunsCache[key] = runs;
+
+            return runs;
+        }
+
+        private static List<(FoldoutAttribute Foldout, List<SerializedProperty> Children)> ComputeRuns(SerializedProperty property)
         {
             var runs = new List<(FoldoutAttribute Foldout, List<SerializedProperty> Children)>();
 
@@ -958,12 +1176,26 @@ namespace ColorlessCore.Inspector.Editor
             var controlId = GUIUtility.GetControlID(FocusType.Passive);
             var key = property.serializedObject.targetObject.GetEntityId() + property.propertyPath;
             var elementRects = new List<Rect>();
+            var visible = GetVisibleRect();
+            var eventType = Event.current.type;
+            var cull = (eventType == EventType.Repaint || eventType == EventType.Layout)
+                       && GUIUtility.keyboardControl == 0
+                       && GUIUtility.hotControl == 0;
 
             for (var i = 0; i < property.arraySize; i++)
             {
                 var element = property.GetArrayElementAtIndex(i);
                 var height = GetElementHeight(element, flat);
                 var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing);
+
+                if (cull && (rowRect.yMax < visible.yMin || rowRect.yMin > visible.yMax))
+                {
+                    elementRects.Add(rowRect);
+                    y += height + Spacing;
+
+                    continue;
+                }
+
                 var fieldRect = new Rect(rect.x + ElementIndent, y, rect.width - ElementIndent - ButtonWidth - 4f, height);
                 var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + (height - 20f) * 0.5f, ButtonWidth, 20f);
                 var handleRect = new Rect(rect.x + 6f, y, 16f, height);

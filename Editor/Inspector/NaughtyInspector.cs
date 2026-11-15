@@ -59,10 +59,10 @@ namespace ColorlessCore.Inspector.Editor
         protected virtual void OnEnable()
         {
             _nonSerializedFields = ReflectionUtility.GetAllFields(
-                target, f => f.GetCustomAttributes(typeof(ShowNonSerializedFieldAttribute), true).Length > 0);
+                target, f => f.GetCustomAttributes(typeof(ShowNonSerializedFieldAttribute), true).Length > 0).ToList();
 
             _nativeProperties = ReflectionUtility.GetAllProperties(
-                target, p => p.GetCustomAttributes(typeof(ShowNativePropertyAttribute), true).Length > 0);
+                target, p => p.GetCustomAttributes(typeof(ShowNativePropertyAttribute), true).Length > 0).ToList();
 
             _methods = ReflectionUtility.GetAllMethods(
                 target, m => m.GetCustomAttributes(typeof(ButtonAttribute), true).Length > 0).ToList();
@@ -75,6 +75,7 @@ namespace ColorlessCore.Inspector.Editor
 
         public override void OnInspectorGUI()
         {
+            NaughtyListDrawer.ClearHeightCache();
             GetSerializedProperties(ref _serializedProperties);
 
             var anyNaughtyAttribute = _serializedProperties.Any(p => PropertyUtility.GetAttribute<INaughtyAttribute>(p) != null || IsSerializeReference(p))

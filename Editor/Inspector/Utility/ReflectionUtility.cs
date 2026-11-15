@@ -77,19 +77,122 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
+        private const BindingFlags AllMembers = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly;
+
+        private static readonly Dictionary<(Type, string), FieldInfo> FieldCache = new Dictionary<(Type, string), FieldInfo>();
+        private static readonly Dictionary<(Type, string), PropertyInfo> PropertyCache = new Dictionary<(Type, string), PropertyInfo>();
+        private static readonly Dictionary<(Type, string), MethodInfo> MethodCache = new Dictionary<(Type, string), MethodInfo>();
+
+        // Lookups keep the historical order: the most base type is searched first
         public static FieldInfo GetField(object target, string fieldName)
         {
-            return GetAllFields(target, f => f.Name.Equals(fieldName, StringComparison.Ordinal)).FirstOrDefault();
+            if (target == null)
+            {
+                Debug.LogError("The target object is null. Check for missing scripts.");
+
+                return null;
+            }
+
+            var key = (target.GetType(), fieldName);
+
+            if (FieldCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            FieldInfo result = null;
+            var types = GetSelfAndBaseTypes(target);
+
+            for (var i = types.Count - 1; i >= 0 && result == null; i--)
+            {
+                foreach (var field in types[i].GetFields(AllMembers))
+                {
+                    if (field.Name.Equals(fieldName, StringComparison.Ordinal))
+                    {
+                        result = field;
+
+                        break;
+                    }
+                }
+            }
+
+            FieldCache[key] = result;
+
+            return result;
         }
 
         public static PropertyInfo GetProperty(object target, string propertyName)
         {
-            return GetAllProperties(target, p => p.Name.Equals(propertyName, StringComparison.Ordinal)).FirstOrDefault();
+            if (target == null)
+            {
+                Debug.LogError("The target object is null. Check for missing scripts.");
+
+                return null;
+            }
+
+            var key = (target.GetType(), propertyName);
+
+            if (PropertyCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            PropertyInfo result = null;
+            var types = GetSelfAndBaseTypes(target);
+
+            for (var i = types.Count - 1; i >= 0 && result == null; i--)
+            {
+                foreach (var property in types[i].GetProperties(AllMembers))
+                {
+                    if (property.Name.Equals(propertyName, StringComparison.Ordinal))
+                    {
+                        result = property;
+
+                        break;
+                    }
+                }
+            }
+
+            PropertyCache[key] = result;
+
+            return result;
         }
 
         public static MethodInfo GetMethod(object target, string methodName)
         {
-            return GetAllMethods(target, m => m.Name.Equals(methodName, StringComparison.Ordinal)).FirstOrDefault();
+            if (target == null)
+            {
+                Debug.LogError("The target object is null. Check for missing scripts.");
+
+                return null;
+            }
+
+            var key = (target.GetType(), methodName);
+
+            if (MethodCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            MethodInfo result = null;
+            var types = GetSelfAndBaseTypes(target);
+
+            for (var i = types.Count - 1; i >= 0 && result == null; i--)
+            {
+                foreach (var method in types[i].GetMethods(AllMembers))
+                {
+                    if (method.Name.Equals(methodName, StringComparison.Ordinal))
+                    {
+                        result = method;
+
+                        break;
+                    }
+                }
+            }
+
+            MethodCache[key] = result;
+
+            return result;
         }
 
         public static Type GetListElementType(Type listType)

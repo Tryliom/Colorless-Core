@@ -48,14 +48,35 @@ namespace ColorlessCore.Inspector.Editor
 
         public static T[] GetAttributes<T>(SerializedProperty property) where T : class
         {
-            FieldInfo fieldInfo = ReflectionUtility.GetField(GetTargetObjectWithProperty(property), property.name);
+            var fieldKey = (property.serializedObject.targetObject.GetHashCode(), property.propertyPath);
+
+            if (!FieldInfoCache.TryGetValue(fieldKey, out var fieldInfo))
+            {
+                fieldInfo = ReflectionUtility.GetField(GetTargetObjectWithProperty(property), property.name);
+                FieldInfoCache[fieldKey] = fieldInfo;
+            }
+
             if (fieldInfo == null)
             {
                 return new T[] { };
             }
 
-            return (T[])fieldInfo.GetCustomAttributes(typeof(T), true);
+            var key = (fieldInfo, typeof(T));
+
+            if (!AttributeCache.TryGetValue(key, out var cached))
+            {
+                cached = (T[])fieldInfo.GetCustomAttributes(typeof(T), true);
+                AttributeCache[key] = cached;
+            }
+
+            return (T[])cached;
         }
+
+        // Per-event cache, cleared with the visibility cache.
+        private static readonly Dictionary<(int, string), FieldInfo> FieldInfoCache = new();
+
+        private static readonly System.Collections.Generic.Dictionary<(FieldInfo, System.Type), System.Array> AttributeCache =
+            new System.Collections.Generic.Dictionary<(FieldInfo, System.Type), System.Array>();
 
         public static GUIContent GetLabel(SerializedProperty property)
         {
@@ -153,6 +174,15 @@ namespace ColorlessCore.Inspector.Editor
         /// <summary>When true, ShowIf/HideIf conditions are ignored (used to list fields of a disabled BoolTitle foldout).</summary>
         public static bool ForceVisible;
 
+        private static readonly Dictionary<(int Object, string Path), bool> VisibilityCache = new();
+
+        /// <summary>Clears the per-event visibility cache. Called at the start of every inspector OnGUI.</summary>
+        public static void ClearVisibilityCache()
+        {
+            VisibilityCache.Clear();
+            FieldInfoCache.Clear();
+        }
+
         public static bool IsVisible(SerializedProperty property)
         {
             if (ForceVisible)
@@ -160,6 +190,22 @@ namespace ColorlessCore.Inspector.Editor
                 return true;
             }
 
+            var key = (property.serializedObject.GetHashCode(), property.propertyPath);
+
+            if (VisibilityCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var result = ComputeIsVisible(property);
+
+            VisibilityCache[key] = result;
+
+            return result;
+        }
+
+        private static bool ComputeIsVisible(SerializedProperty property)
+        {
             ShowIfAttributeBase showIfAttribute = GetAttribute<ShowIfAttributeBase>(property);
             if (showIfAttribute == null)
             {
@@ -337,25 +383,45 @@ namespace ColorlessCore.Inspector.Editor
         /// </summary>
         /// <param name="property"></param>
         /// <returns></returns>
+        private static readonly Dictionary<string, (string Name, int Index)[]> PathCache = new();
+        private static readonly Dictionary<(Type, string), MemberInfo> MemberCache = new();
+
+        private static (string Name, int Index)[] ParsePath(string propertyPath)
+        {
+            if (PathCache.TryGetValue(propertyPath, out var parsed))
+            {
+                return parsed;
+            }
+
+            var elements = propertyPath.Replace(".Array.data[", "[").Split('.');
+
+            parsed = new (string Name, int Index)[elements.Length - 1];
+
+            for (var i = 0; i < parsed.Length; i++)
+            {
+                var element = elements[i];
+                var bracket = element.IndexOf('[');
+
+                parsed[i] = bracket >= 0
+                    ? (element.Substring(0, bracket), Convert.ToInt32(element.Substring(bracket).Replace("[", "").Replace("]", "")))
+                    : (element, -1);
+            }
+
+            PathCache[propertyPath] = parsed;
+
+            return parsed;
+        }
+
         public static object GetTargetObjectWithProperty(SerializedProperty property)
         {
-            string path = property.propertyPath.Replace(".Array.data[", "[");
+            var path = ParsePath(property.propertyPath);
             object obj = property.serializedObject.targetObject;
-            string[] elements = path.Split('.');
 
-            for (int i = 0; i < elements.Length - 1; i++)
+            for (var i = 0; i < path.Length; i++)
             {
-                string element = elements[i];
-                if (element.Contains("["))
-                {
-                    string elementName = element.Substring(0, element.IndexOf("["));
-                    int index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
-                    obj = GetValue_Imp(obj, elementName, index);
-                }
-                else
-                {
-                    obj = GetValue_Imp(obj, element);
-                }
+                obj = path[i].Index >= 0
+                    ? GetValue_Imp(obj, path[i].Name, path[i].Index)
+                    : GetValue_Imp(obj, path[i].Name);
             }
 
             return obj;
@@ -368,23 +434,29 @@ namespace ColorlessCore.Inspector.Editor
                 return null;
             }
 
-            Type type = source.GetType();
+            var type = source.GetType();
+            var key = (type, name);
 
-            while (type != null)
+            if (!MemberCache.TryGetValue(key, out var member))
             {
-                FieldInfo field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (field != null)
+                var current = type;
+
+                while (current != null && member == null)
                 {
+                    member = current.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                             ?? (MemberInfo) current.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    current = current.BaseType;
+                }
+
+                MemberCache[key] = member;
+            }
+
+            switch (member)
+            {
+                case FieldInfo field:
                     return field.GetValue(source);
-                }
-
-                PropertyInfo property = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (property != null)
-                {
+                case PropertyInfo property:
                     return property.GetValue(source, null);
-                }
-
-                type = type.BaseType;
             }
 
             return null;
@@ -392,7 +464,14 @@ namespace ColorlessCore.Inspector.Editor
 
         private static object GetValue_Imp(object source, string name, int index)
         {
-            IEnumerable enumerable = GetValue_Imp(source, name) as IEnumerable;
+            var value = GetValue_Imp(source, name);
+
+            if (value is IList list)
+            {
+                return index >= 0 && index < list.Count ? list[index] : null;
+            }
+
+            IEnumerable enumerable = value as IEnumerable;
             if (enumerable == null)
             {
                 return null;

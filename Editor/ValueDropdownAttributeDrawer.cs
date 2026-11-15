@@ -51,23 +51,7 @@ public class ValueDropdownAttributeDrawer : PropertyDrawer
 	{
 		var methodName = ((ValueDropdownAttribute) attribute).MethodName;
 		var parent = GetParentObject(property);
-		MethodInfo method = null;
-
-		if (parent != null)
-		{
-			method = parent.GetType().GetMethod(methodName, Flags);
-		}
-
-		if (method == null && methodName.Contains('.'))
-		{
-			var split = methodName.LastIndexOf('.');
-			var typeName = methodName[..split];
-			var type = AppDomain.CurrentDomain.GetAssemblies()
-				.SelectMany(assembly => assembly.GetTypes())
-				.FirstOrDefault(t => t.FullName == typeName || t.Name == typeName);
-
-			method = type?.GetMethod(methodName[(split + 1)..], Flags);
-		}
+		var method = FindMethod(parent?.GetType(), methodName);
 
 		if (method == null || method.GetParameters().Length > 0)
 		{
@@ -94,6 +78,41 @@ public class ValueDropdownAttributeDrawer : PropertyDrawer
 		}
 
 		return items;
+	}
+
+	private static readonly Dictionary<(Type, string), MethodInfo> MethodCache = new();
+	private static readonly Dictionary<string, Type> TypeCache = new();
+
+	private static MethodInfo FindMethod(Type parentType, string methodName)
+	{
+		var key = (parentType, methodName);
+
+		if (MethodCache.TryGetValue(key, out var cached))
+		{
+			return cached;
+		}
+
+		var method = parentType?.GetMethod(methodName, Flags);
+
+		if (method == null && methodName.Contains('.'))
+		{
+			var split = methodName.LastIndexOf('.');
+			var typeName = methodName[..split];
+
+			if (!TypeCache.TryGetValue(typeName, out var type))
+			{
+				type = AppDomain.CurrentDomain.GetAssemblies()
+					.SelectMany(assembly => assembly.GetTypes())
+					.FirstOrDefault(t => t.FullName == typeName || t.Name == typeName);
+				TypeCache[typeName] = type;
+			}
+
+			method = type?.GetMethod(methodName[(split + 1)..], Flags);
+		}
+
+		MethodCache[key] = method;
+
+		return method;
 	}
 
 	// Walks the property path to find the object that declares the field
