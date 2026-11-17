@@ -1,99 +1,118 @@
 using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
-public enum NumberType
+public enum NumberRangeMode
 {
-	Int,
-	Float
-}
-
-public enum RangeCondition
-{
-	MoreThan,
-	LessThan,
-	Between
+	Exact,
+	Range
 }
 
 /// <summary>
-/// Optional settings for a NumberRange field: slider bounds and increment step.
-/// Usage: [NumberRangeSettings(0, 100, 5)]
+/// A number that is either an exact value or a range to pick a random value from.
+/// Slider bounds and step can be customized with [NumberRangeSettings(...)].
 /// </summary>
-[AttributeUsage(AttributeTargets.Field)]
-public class NumberRangeSettingsAttribute : PropertyAttribute
-{
-	public readonly float Min;
-	public readonly float Max;
-	public readonly float Step;
-	public readonly bool HasType;
-	public readonly NumberType Type;
-
-	public NumberRangeSettingsAttribute(float min, float max, float step = 0f)
-	{
-		Min = min;
-		Max = max;
-		Step = step;
-	}
-
-	/// <summary>
-	/// Forces the number type; the type popup is then hidden in the inspector.
-	/// </summary>
-	public NumberRangeSettingsAttribute(NumberType type, float min, float max, float step = 0f) : this(min, max, step)
-	{
-		HasType = true;
-		Type = type;
-	}
-}
-
 [Serializable]
 public class NumberRange
 {
-	public NumberType Type = NumberType.Int;
-	public RangeCondition Condition = RangeCondition.MoreThan;
+	public NumberType Type = NumberType.Float;
+	public NumberRangeMode Mode = NumberRangeMode.Exact;
 	public float Value;
 	public float MaxValue;
 
-	/// <summary>
-	/// Value is the threshold for MoreThan/LessThan, and the lower bound for Between (MaxValue is the upper bound).
-	/// Comparisons are inclusive.
-	/// </summary>
-	public bool IsValid(float number)
+	public NumberRange()
 	{
-		switch (Condition)
-		{
-			case RangeCondition.MoreThan:
-				return number >= Value;
-			case RangeCondition.LessThan:
-				return number <= Value;
-			default:
-				return number >= Math.Min(Value, MaxValue) && number <= Math.Max(Value, MaxValue);
-		}
 	}
 
-	public bool IsValid(int number)
+	public NumberRange(float exact, NumberType type = NumberType.Float)
 	{
-		return IsValid((float) number);
+		Type = type;
+		Set(exact);
+	}
+
+	public NumberRange(float min, float max, NumberType type = NumberType.Float)
+	{
+		Type = type;
+		Set(min, max);
+	}
+
+	public bool IsRange => Mode == NumberRangeMode.Range;
+
+	/// <summary>
+	/// Lowest possible value
+	/// </summary>
+	public float Min => Mode == NumberRangeMode.Exact ? Value : Math.Min(Value, MaxValue);
+
+	/// <summary>
+	/// Highest possible value
+	/// </summary>
+	public float Max => Mode == NumberRangeMode.Exact ? Value : Math.Max(Value, MaxValue);
+
+	public int MinInt => Mathf.RoundToInt(Min);
+
+	public int MaxInt => Mathf.RoundToInt(Max);
+
+	public void Set(float exact)
+	{
+		Mode = NumberRangeMode.Exact;
+		Value = exact;
+		MaxValue = exact;
+	}
+
+	/// <summary>
+	/// Becomes an exact value when both bounds are equal
+	/// </summary>
+	public void Set(float min, float max)
+	{
+		if (Mathf.Approximately(min, max))
+		{
+			Set(min);
+			return;
+		}
+
+		Mode = NumberRangeMode.Range;
+		Value = Math.Min(min, max);
+		MaxValue = Math.Max(min, max);
+	}
+
+	/// <summary>
+	/// Random value in the range (or the exact value). With the Int type, both bounds are inclusive.
+	/// </summary>
+	public float GetRandomFloat()
+	{
+		if (Type == NumberType.Int)
+		{
+			return GetRandomInt();
+		}
+
+		return Mode == NumberRangeMode.Exact || Mathf.Approximately(Min, Max) ? Min : Random.Range(Min, Max);
+	}
+
+	/// <summary>
+	/// Random rounded value in the range (or the exact value), both bounds are inclusive.
+	/// </summary>
+	public int GetRandomInt()
+	{
+		var min = MinInt;
+		var max = MaxInt;
+
+		return min >= max ? min : Random.Range(min, max + 1);
 	}
 
 #if UNITY_EDITOR
 	/// <summary>
-	/// Readable text
+	/// Readable value like "2" or "1-3"
 	/// </summary>
-	public string GetDescription(string label, bool asPercent = false)
+	public string GetDescription(string format = "0.##")
 	{
-		var suffix = asPercent ? "%" : "";
-		var factor = asPercent ? 100f : 1f;
-		var value = Value * factor;
-		var maxValue = MaxValue * factor;
-
-		switch (Condition)
+		if (Mode == NumberRangeMode.Exact || Mathf.Approximately(Min, Max))
 		{
-			case RangeCondition.MoreThan:
-				return $"{label} >= {value:0.##}{suffix}";
-			case RangeCondition.LessThan:
-				return $"{label} <= {value:0.##}{suffix}";
-			default:
-				return $"{label} {Math.Min(value, maxValue):0.##}-{Math.Max(value, maxValue):0.##}{suffix}";
+			return Min.ToString(format);
 		}
+
+		return $"{Min.ToString(format)}-{Max.ToString(format)}";
 	}
+
+	public bool IsZero => Mathf.Approximately(Min, 0f) && Mathf.Approximately(Max, 0f);
 #endif
 }

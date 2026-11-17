@@ -1,34 +1,44 @@
+﻿using ColorlessCore.Inspector.Editor;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
 [CustomPropertyDrawer(typeof(NumberRange))]
-[CustomPropertyDrawer(typeof(NumberRangeSettingsAttribute))]
 public class NumberRangeDrawer : PropertyDrawer
 {
 	private const float Spacing = 4f;
 	private const float TypeWidth = 50f;
-	private const float ConditionWidth = 80f;
+	private const float ModeWidth = 60f;
 	private const float FieldWidth = 50f;
 
 	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 	{
-		var settings = attribute as NumberRangeSettingsAttribute;
+		Draw(position, property, label, fieldInfo?.GetCustomAttribute<NumberRangeSettingsAttribute>());
+	}
+
+	/// <summary>Shared with NumberConditionRangeDrawer, which owns the NumberRangeSettings attribute drawer.</summary>
+	public static void Draw(Rect position, SerializedProperty property, GUIContent label, NumberRangeSettingsAttribute settings)
+	{
 		var typeProp = property.FindPropertyRelative(nameof(NumberRange.Type));
-		var conditionProp = property.FindPropertyRelative(nameof(NumberRange.Condition));
+		var modeProp = property.FindPropertyRelative(nameof(NumberRange.Mode));
 		var valueProp = property.FindPropertyRelative(nameof(NumberRange.Value));
 		var maxProp = property.FindPropertyRelative(nameof(NumberRange.MaxValue));
 
 		EditorGUI.BeginProperty(position, label, property);
 
 		var indent = EditorGUI.indentLevel;
-		position = EditorGUI.PrefixLabel(position, label);
+		var labelWidth = Mathf.Min(EditorGUIUtility.labelWidth, position.width * 0.3f);
+		var labelRect = new Rect(position.x, position.y, labelWidth, position.height);
+
+		EditorGUI.LabelField(labelRect, label);
+		position = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
 		EditorGUI.indentLevel = 0;
 
 		var typeForced = settings != null && settings.HasType;
 		var typeRect = new Rect(position.x, position.y, typeForced ? 0f : TypeWidth, position.height);
-		var conditionX = typeForced ? position.x : typeRect.xMax + Spacing;
-		var conditionRect = new Rect(conditionX, position.y, ConditionWidth, position.height);
-		var rest = new Rect(conditionRect.xMax + Spacing, position.y, position.xMax - conditionRect.xMax - Spacing, position.height);
+		var modeX = typeForced ? position.x : typeRect.xMax + Spacing;
+		var modeRect = new Rect(modeX, position.y, ModeWidth, position.height);
+		var rest = new Rect(modeRect.xMax + Spacing, position.y, position.xMax - modeRect.xMax - Spacing, position.height);
 
 		if (typeForced)
 		{
@@ -42,10 +52,10 @@ public class NumberRangeDrawer : PropertyDrawer
 			EditorGUI.PropertyField(typeRect, typeProp, GUIContent.none);
 		}
 
-		EditorGUI.PropertyField(conditionRect, conditionProp, GUIContent.none);
+		EditorGUI.PropertyField(modeRect, modeProp, GUIContent.none);
 
 		var isInt = (NumberType) typeProp.enumValueIndex == NumberType.Int;
-		var condition = (RangeCondition) conditionProp.enumValueIndex;
+		var isRange = (NumberRangeMode) modeProp.enumValueIndex == NumberRangeMode.Range;
 		var hasLimits = settings != null && settings.Max > settings.Min;
 		var step = settings?.Step ?? 0f;
 
@@ -54,50 +64,38 @@ public class NumberRangeDrawer : PropertyDrawer
 			step = Mathf.Max(1f, Mathf.Round(step));
 		}
 
-		float Sanitize(float v)
+		float Snap(float v)
 		{
-			if (step > 0f)
-			{
-				var origin = hasLimits ? settings.Min : 0f;
-				v = origin + Mathf.Round((v - origin) / step) * step;
-			}
-
-			if (hasLimits)
-			{
-				v = Mathf.Clamp(v, settings.Min, settings.Max);
-			}
-
-			return isInt ? Mathf.Round(v) : v;
+			return MinMaxSliderGUI.Snap(v, settings.Min, settings.Max, step, isInt);
 		}
 
 		EditorGUI.BeginChangeCheck();
 
-		var value = Sanitize(valueProp.floatValue);
-		var maxValue = Sanitize(maxProp.floatValue);
+		var value = valueProp.floatValue;
+		var maxValue = maxProp.floatValue;
 
-		if (condition == RangeCondition.Between)
+		if (hasLimits)
 		{
-			var minRect = new Rect(rest.x, rest.y, FieldWidth, rest.height);
-			var maxRect = new Rect(rest.xMax - FieldWidth, rest.y, FieldWidth, rest.height);
+			value = Snap(value);
+			maxValue = Snap(maxValue);
+		}
 
+		if (isRange)
+		{
 			if (hasLimits)
 			{
-				var sliderRect = new Rect(minRect.xMax + Spacing, rest.y, maxRect.x - minRect.xMax - Spacing * 2f, rest.height);
-
-				value = DrawNumber(minRect, value, isInt);
-				maxValue = DrawNumber(maxRect, maxValue, isInt);
-
-				var low = Mathf.Min(value, maxValue);
-				var high = Mathf.Max(value, maxValue);
-				EditorGUI.MinMaxSlider(sliderRect, ref low, ref high, settings.Min, settings.Max);
-				value = low;
-				maxValue = high;
+				MinMaxSliderGUI.Draw(rest, ref value, ref maxValue, settings.Min, settings.Max, step, isInt);
 			}
 			else
 			{
 				var half = (rest.width - Spacing) * 0.5f;
 				value = DrawNumber(new Rect(rest.x, rest.y, half, rest.height), value, isInt);
 				maxValue = DrawNumber(new Rect(rest.x + half + Spacing, rest.y, half, rest.height), maxValue, isInt);
+
+				if (maxValue < value)
+				{
+					maxValue = value;
+				}
 			}
 		}
 		else if (hasLimits)
@@ -105,22 +103,24 @@ public class NumberRangeDrawer : PropertyDrawer
 			var fieldRect = new Rect(rest.xMax - FieldWidth, rest.y, FieldWidth, rest.height);
 			var sliderRect = new Rect(rest.x, rest.y, fieldRect.x - rest.x - Spacing, rest.height);
 
-			value = GUI.HorizontalSlider(sliderRect, value, settings.Min, settings.Max);
-			value = DrawNumber(fieldRect, value, isInt);
+			value = Snap(GUI.HorizontalSlider(sliderRect, value, settings.Min, settings.Max));
+			value = Snap(DrawNumber(fieldRect, value, isInt));
+			maxValue = value;
 		}
 		else
 		{
 			value = DrawNumber(rest, value, isInt);
+			maxValue = value;
 		}
 
 		if (EditorGUI.EndChangeCheck())
 		{
-			valueProp.floatValue = Sanitize(value);
-			maxProp.floatValue = Sanitize(maxValue);
+			valueProp.floatValue = hasLimits ? Snap(value) : value;
+			maxProp.floatValue = hasLimits ? Snap(maxValue) : maxValue;
 		}
 		else if (!Mathf.Approximately(valueProp.floatValue, value) || !Mathf.Approximately(maxProp.floatValue, maxValue))
 		{
-			// Keeps stored data consistent when the type or the attribute settings change
+			// Keeps stored data consistent when the type, the mode or the attribute settings change
 			valueProp.floatValue = value;
 			maxProp.floatValue = maxValue;
 		}

@@ -315,6 +315,18 @@ namespace ColorlessCore.Inspector.Editor
 
         private static GUIStyle _countStyle;
 
+        private const float CountWidth = 110f;
+        private const float MinColumnWidth = 40f;
+
+        private static float GetKeyWidth(SerializedProperty property, float contentWidth)
+        {
+            var settings = PropertyUtility.GetAttribute<DictionaryDrawerSettingsAttribute>(property);
+            var setting = settings?.KeyWidth ?? 125f;
+            var width = setting <= 1f ? contentWidth * Mathf.Max(0f, setting) : setting;
+
+            return Mathf.Clamp(width, MinColumnWidth, Mathf.Max(MinColumnWidth, contentWidth - MinColumnWidth));
+        }
+
         private static void DrawDictionary(Rect rect, SerializedProperty property)
         {
             EnsureExpanded(property);
@@ -333,7 +345,7 @@ namespace ColorlessCore.Inspector.Editor
             var headerBackground = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
             var header = new Rect(rect.x, rect.y + HeaderPadding, rect.width, HeaderHeight);
             var addRect = new Rect(header.xMax - ButtonWidth, header.y + (header.height - 18f) * 0.5f, ButtonWidth, 18f);
-            var countRect = new Rect(addRect.x - 74f, header.y, 70f, header.height);
+            var countRect = new Rect(addRect.x - CountWidth - 4f, header.y, CountWidth, header.height);
             var labelRect = new Rect(header.x + 18f, header.y, countRect.x - header.x - 18f, header.height);
 
             if (Event.current.type == EventType.Repaint)
@@ -375,6 +387,7 @@ namespace ColorlessCore.Inspector.Editor
             var y = headerBackground.yMax + InnerPadding;
             var visible = GetVisibleRect();
             var eventType = Event.current.type;
+            var keyWidth = GetKeyWidth(property, rect.width - 8f - ButtonWidth - 8f);
 
             // Skip off-screen rows only when no control is focused, so control ids stay consistent for editing.
             var cull = (eventType == EventType.Repaint || eventType == EventType.Layout)
@@ -387,7 +400,6 @@ namespace ColorlessCore.Inspector.Editor
                 var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing);
                 var contentX = rect.x + 8f;
                 var contentWidth = rect.width - 8f - ButtonWidth - 8f;
-                var keyWidth = contentWidth * 0.4f;
                 var keyRect = new Rect(contentX, y, keyWidth - 2f, height);
                 var valueRect = new Rect(contentX + keyWidth + 2f, y, contentWidth - keyWidth - 2f, height);
                 var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + (height - 20f) * 0.5f, ButtonWidth, 20f);
@@ -502,7 +514,7 @@ namespace ColorlessCore.Inspector.Editor
 
             for (var i = 0; i < property.arraySize; i++)
             {
-                height += GetElementHeight(property.GetArrayElementAtIndex(i), settings != null && !settings.ShowFoldout) + Spacing;
+                height += GetElementHeight(property.GetArrayElementAtIndex(i), settings == null || !settings.ShowFoldout) + Spacing;
             }
 
             return height + BottomPadding;
@@ -522,13 +534,22 @@ namespace ColorlessCore.Inspector.Editor
             {
                 DrawContainer(rect, property, label, flat || IsInline(property), plain);
             }
-            else if (label != null)
-            {
-                EditorGUI.PropertyField(rect, property, label, true);
-            }
             else
             {
-                EditorGUI.PropertyField(rect, property, true);
+                var previousLabelWidth = EditorGUIUtility.labelWidth;
+
+                EditorGUIUtility.labelWidth = Mathf.Min(previousLabelWidth, Mathf.Max(80f, rect.width * 0.3f));
+
+                if (label != null)
+                {
+                    EditorGUI.PropertyField(rect, property, label, true);
+                }
+                else
+                {
+                    EditorGUI.PropertyField(rect, property, true);
+                }
+
+                EditorGUIUtility.labelWidth = previousLabelWidth;
             }
         }
 
@@ -1115,7 +1136,7 @@ namespace ColorlessCore.Inspector.Editor
             var elementType = GetElementType(field != null ? field.FieldType : null);
             var showFoldout = true;
             var showIndex = settings != null && settings.ShowIndexLabels;
-            var flat = settings != null && !settings.ShowFoldout;
+            var flat = settings == null || !settings.ShowFoldout;
             var label = PropertyUtility.GetLabel(property);
 
             rect.height = GetListBodyHeight(property, settings);
@@ -1123,7 +1144,7 @@ namespace ColorlessCore.Inspector.Editor
             var headerBackground = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
             var header = new Rect(rect.x, rect.y + HeaderPadding, rect.width, HeaderHeight);
             var addRect = new Rect(header.xMax - ButtonWidth, header.y + (header.height - 18f) * 0.5f, ButtonWidth, 18f);
-            var countRect = new Rect(addRect.x - 74f, header.y, 70f, header.height);
+            var countRect = new Rect(addRect.x - CountWidth - 4f, header.y, CountWidth, header.height);
             var labelRect = new Rect(header.x + 18f, header.y, countRect.x - header.x - 18f, header.height);
 
             if (Event.current.type == EventType.Repaint)

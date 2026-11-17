@@ -30,10 +30,19 @@ namespace ColorlessCore.Inspector
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
 	public class ListDrawerSettingsAttribute : MetaAttribute
 	{
-		public bool ShowFoldout = true;
+		/// <summary>Shows a foldout on each element. Elements are drawn flat by default.</summary>
+		public bool ShowFoldout = false;
 		public bool ShowIndexLabels = false;
 		public int NumberOfItemsPerPage = 0;
 		public string CustomAddFunction;
 		public bool HideReferenceObjectPicker = false;
+	}
+
+	/// <summary>Customizes how a dictionary is drawn.</summary>
+	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+	public class DictionaryDrawerSettingsAttribute : MetaAttribute
+	{
+		/// <summary>Key column width: from 0 to 1 it is a ratio of the row width, above 1 it is in pixels.</summary>
+		public float KeyWidth = 125f;
 	}
 }

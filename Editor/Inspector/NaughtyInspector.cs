@@ -75,6 +75,23 @@ namespace ColorlessCore.Inspector.Editor
 
         public override void OnInspectorGUI()
         {
+            var previousLabelWidth = EditorGUIUtility.labelWidth;
+
+            // Unity defaults to ~45% of the view width, labels only need 30%
+            EditorGUIUtility.labelWidth = Mathf.Max(80f, EditorGUIUtility.currentViewWidth * 0.3f);
+
+            try
+            {
+                DrawInspector();
+            }
+            finally
+            {
+                EditorGUIUtility.labelWidth = previousLabelWidth;
+            }
+        }
+
+        private void DrawInspector()
+        {
             NaughtyListDrawer.ClearHeightCache();
             GetSerializedProperties(ref _serializedProperties);
 
