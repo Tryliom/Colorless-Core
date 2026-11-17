@@ -476,8 +476,88 @@ namespace ColorlessCore.Inspector.Editor
             return result;
         }
 
+        // Rows holding a GUILayout-based table must not be culled, otherwise Layout and Repaint disagree on the control count
+        private static bool ContainsTable(Type type, int depth)
+        {
+            if (type == null || depth > 3 || type.IsPrimitive || type == typeof(string) || typeof(UnityEngine.Object).IsAssignableFrom(type))
+            {
+                return false;
+            }
+
+            if (TableTypeCache.TryGetValue(type, out var cached))
+            {
+                return cached;
+            }
+
+            TableTypeCache[type] = false;
+
+            var result = false;
+
+            foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                if (field.GetCustomAttribute<TableListAttribute>() != null)
+                {
+                    result = true;
+
+                    break;
+                }
+
+                var fieldType = field.FieldType;
+
+                if (fieldType.IsArray)
+                {
+                    fieldType = fieldType.GetElementType();
+                }
+                else if (fieldType.IsGenericType && typeof(System.Collections.IList).IsAssignableFrom(fieldType))
+                {
+                    fieldType = fieldType.GetGenericArguments()[0];
+                }
+
+                if (ContainsTable(fieldType, depth + 1))
+                {
+                    result = true;
+
+                    break;
+                }
+            }
+
+            TableTypeCache[type] = result;
+
+            return result;
+        }
+
+        private static readonly Dictionary<Type, bool> TableTypeCache = new Dictionary<Type, bool>();
+        private static readonly Dictionary<(int, string), Rect> TableAreaRects = new Dictionary<(int, string), Rect>();
+
+        private static bool TryGetTable(SerializedProperty property, out System.Collections.IList list, out TableListAttribute attribute)
+        {
+            list = null;
+            attribute = null;
+
+            if (!property.isArray || property.propertyType == SerializedPropertyType.String || IsDictionary(property))
+            {
+                return false;
+            }
+
+            attribute = PropertyUtility.GetAttribute<TableListAttribute>(property);
+
+            if (attribute == null)
+            {
+                return false;
+            }
+
+            list = PropertyUtility.GetTargetObjectOfProperty(property) as System.Collections.IList;
+
+            return list != null;
+        }
+
         private static float ComputeHeight(SerializedProperty property, bool flat, bool plain)
         {
+            if (TryGetTable(property, out _, out _))
+            {
+                return NaughtyTableDrawer.GetHeight(property);
+            }
+
             if (IsDictionary(property))
             {
                 return GetDictionaryHeight(property);
@@ -522,7 +602,32 @@ namespace ColorlessCore.Inspector.Editor
 
         public static void Field(Rect rect, SerializedProperty property, GUIContent label = null, bool flat = false, bool plain = false)
         {
-            if (IsDictionary(property))
+            if (TryGetTable(property, out var tableList, out var tableAttribute))
+            {
+                // The area keeps the rect given during Layout, where rect-based rows have no valid position yet: reuse the last real one
+                var areaKey = (property.serializedObject.targetObject != null ? property.serializedObject.targetObject.GetHashCode() : 0, property.propertyPath);
+
+                if (Event.current.type == EventType.Layout)
+                {
+                    rect = TableAreaRects.TryGetValue(areaKey, out var stored)
+                        ? new Rect(stored.x, stored.y, stored.width, rect.height)
+                        : new Rect(rect.x, rect.y, EditorGUIUtility.currentViewWidth - 40f, NaughtyTableDrawer.GetHeight(property));
+                }
+                else if (rect.width > 1f)
+                {
+                    TableAreaRects[areaKey] = rect;
+                }
+
+                GUILayout.BeginArea(rect);
+                GUILayout.BeginVertical(GUILayout.ExpandHeight(false));
+                NaughtyTableDrawer.Draw(tableList, property.serializedObject.targetObject, ObjectNames.NicifyVariableName(property.name),
+                    tableAttribute.IsReadOnly, null, property);
+                GUILayout.EndVertical();
+                GUILayout.FlexibleSpace();
+                GUILayout.EndArea();
+                property.serializedObject.Update();
+            }
+            else if (IsDictionary(property))
             {
                 DrawDictionary(rect, property);
             }
@@ -1201,7 +1306,8 @@ namespace ColorlessCore.Inspector.Editor
             var eventType = Event.current.type;
             var cull = (eventType == EventType.Repaint || eventType == EventType.Layout)
                        && GUIUtility.keyboardControl == 0
-                       && GUIUtility.hotControl == 0;
+                       && GUIUtility.hotControl == 0
+                       && !ContainsTable(elementType, 0);
 
             for (var i = 0; i < property.arraySize; i++)
             {

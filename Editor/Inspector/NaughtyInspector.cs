@@ -23,6 +23,7 @@ namespace ColorlessCore.Inspector.Editor
             public float Space;
             public string Title;
             public ListDrawerSettingsAttribute List;
+            public TableListAttribute Table;
             public TabAttribute Tab;
             public FoldoutAttribute Foldout;
             public BoxGroupAttribute Box;
@@ -215,6 +216,7 @@ namespace ColorlessCore.Inspector.Editor
             item.Order = member.GetCustomAttribute<PropertyOrderAttribute>(true)?.Order ?? 0;
             item.Space = member.GetCustomAttribute<PropertySpaceAttribute>(true)?.Space ?? 0f;
             item.List = member.GetCustomAttribute<ListDrawerSettingsAttribute>(true);
+            item.Table = member.GetCustomAttribute<TableListAttribute>(true);
 
             if (readTitle)
             {
@@ -741,6 +743,12 @@ namespace ColorlessCore.Inspector.Editor
 
                 NaughtyListDrawer.Field(rect, property);
             }
+            else if (item.Table != null && property.isArray && property.propertyType != SerializedPropertyType.String
+                && PropertyUtility.GetTargetObjectOfProperty(property) is System.Collections.IList tableList)
+            {
+                NaughtyTableDrawer.Draw(tableList, target, ObjectNames.NicifyVariableName(property.name),                 item.Table.IsReadOnly, null, property);
+                serializedObject.Update();
+            }
             else if (property.isArray && property.propertyType != SerializedPropertyType.String)
             {
                 DrawList(item);
@@ -938,9 +946,46 @@ namespace ColorlessCore.Inspector.Editor
                 || field.GetCustomAttribute<ReadOnlyAttribute>(true) != null
                 || !ButtonUtility.IsEnabled(target, field);
 
+            if (value == null && !readOnly)
+            {
+                if (typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType))
+                {
+                    var picked = EditorGUILayout.ObjectField(label, null, field.FieldType, true);
+
+                    if (picked != null)
+                    {
+                        Undo.RecordObject(target, "Change " + field.Name);
+                        field.SetValue(owner, picked);
+                        EditorUtility.SetDirty(target);
+                        InvokeValueChanged(field);
+                    }
+
+                    return;
+                }
+
+                if (field.FieldType == typeof(string))
+                {
+                    value = string.Empty;
+                }
+            }
+
             if (value == null)
             {
                 EditorGUILayout.LabelField(label, "null");
+
+                return;
+            }
+
+            if (value is System.Collections.IList tableValue && field.GetCustomAttribute<TableListAttribute>(true) is { } tableAttribute)
+            {
+                NaughtyTableDrawer.Draw(tableValue, target, label, readOnly || tableAttribute.IsReadOnly);
+
+                return;
+            }
+
+            if (value is System.Collections.IList nonSerializedList)
+            {
+                DrawNonSerializedList(nonSerializedList, label, field.Name);
 
                 return;
             }
@@ -961,6 +1006,12 @@ namespace ColorlessCore.Inspector.Editor
             field.SetValue(owner, newValue);
             EditorUtility.SetDirty(target);
 
+            InvokeValueChanged(field);
+            serializedObject.Update();
+        }
+
+        private void InvokeValueChanged(FieldInfo field)
+        {
             foreach (var changed in field.GetCustomAttributes<OnValueChangedAttribute>(true))
             {
                 var callback = target.GetType().GetMethod(
@@ -972,8 +1023,104 @@ namespace ColorlessCore.Inspector.Editor
 
                 callback?.Invoke(target, null);
             }
+        }
 
-            serializedObject.Update();
+        private readonly Dictionary<string, bool> _nonSerializedListFoldouts = new Dictionary<string, bool>();
+
+        private void DrawNonSerializedList(System.Collections.IList list, string label, string key)
+        {
+            _nonSerializedListFoldouts.TryGetValue(key, out var open);
+
+            var headerRect = EditorGUILayout.GetControlRect(false, 22f);
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                EditorGUI.DrawRect(headerRect, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+            }
+
+            open = EditorGUI.Foldout(new Rect(headerRect.x + 14f, headerRect.y + 3f, headerRect.width - 100f, 16f), open, label, true);
+            _nonSerializedListFoldouts[key] = open;
+
+            var countStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
+
+            if (list.Count == 0)
+            {
+                countStyle.normal.textColor = Color.gray;
+            }
+
+            EditorGUI.LabelField(new Rect(headerRect.xMax - 86f, headerRect.y, 80f, headerRect.height),
+                list.Count == 0 ? "Empty" : list.Count == 1 ? "1 Element" : list.Count + " Elements", countStyle);
+
+            if (!open)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+
+            for (var i = 0; i < list.Count; i++)
+            {
+                var element = list[i];
+
+                if (element == null)
+                {
+                    continue;
+                }
+
+                var elementType = element.GetType();
+
+                if (elementType.IsPrimitive || elementType == typeof(string) || elementType.IsValueType || element is UnityEngine.Object)
+                {
+                    NaughtyEditorGUI.Field_Layout(element, $"Element {i}");
+
+                    continue;
+                }
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+                foreach (var f in elementType.GetFields(flags))
+                {
+                    var visible = f.IsPublic
+                        ? f.GetCustomAttribute<NonSerializedAttribute>() == null && f.GetCustomAttribute<HideInInspector>() == null
+                        : f.GetCustomAttribute<SerializeField>() != null;
+
+                    var fieldValue = f.GetValue(element);
+
+                    if (!visible || fieldValue == null)
+                    {
+                        continue;
+                    }
+
+                    if (NaughtyEditorGUI.EditableField_Layout(fieldValue, ObjectNames.NicifyVariableName(f.Name), out var newValue) && !Equals(fieldValue, newValue))
+                    {
+                        f.SetValue(element, newValue);
+                        EditorUtility.SetDirty(target);
+                    }
+                }
+
+                foreach (var method in elementType.GetMethods(flags))
+                {
+                    var button = method.GetCustomAttribute<ButtonAttribute>(true);
+
+                    if (button == null || !method.GetParameters().All(p => p.IsOptional))
+                    {
+                        continue;
+                    }
+
+                    var text = string.IsNullOrEmpty(button.Text) ? ObjectNames.NicifyVariableName(method.Name) : button.Text;
+
+                    if (GUILayout.Button(text))
+                    {
+                        method.Invoke(element, method.GetParameters().Select(p => p.DefaultValue).ToArray());
+                    }
+                }
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUI.indentLevel--;
         }
 
         private void DrawButton(MethodInfo method)
