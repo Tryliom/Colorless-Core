@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -44,9 +43,19 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
-        public static TabGroup Create(string key, IEnumerable<string> names, string stateKey)
+        public static TabGroup Create(string key, List<string> names, string stateKey)
         {
-            var group = new TabGroup { Key = key, StateKey = stateKey, Names = names.Distinct().ToList() };
+            var distinct = new List<string>(names.Count);
+
+            foreach (var name in names)
+            {
+                if (!distinct.Contains(name))
+                {
+                    distinct.Add(name);
+                }
+            }
+
+            var group = new TabGroup { Key = key, StateKey = stateKey, Names = distinct };
 
             group.Selected = Mathf.Clamp(SessionState.GetInt(stateKey, 0), 0, Mathf.Max(0, group.Names.Count - 1));
 
@@ -71,16 +80,25 @@ namespace ColorlessCore.Inspector.Editor
                 names.Add(tab.Name);
             }
 
-            return namesByGroup.ToDictionary(pair => pair.Key, pair => Create(pair.Key, pair.Value, stateKeyFor(pair.Key)));
+            var groups = new Dictionary<string, TabGroup>(namesByGroup.Count);
+
+            foreach (var pair in namesByGroup)
+            {
+                groups[pair.Key] = Create(pair.Key, pair.Value, stateKeyFor(pair.Key));
+            }
+
+            return groups;
         }
 
         /// <summary>
         /// Width of the widest label among the given properties, capped relatively to the available width.
         /// Returns 0 when there is nothing to measure.
         /// </summary>
-        public static float MeasureLabelWidth(IEnumerable<SerializedProperty> properties, float availableWidth)
+        public static float MeasureLabelWidth(List<SerializedProperty> properties, float availableWidth)
         {
-            var widest = NaughtyListDrawer.MeasureWidestLabel(properties.Where(p => p != null).ToList());
+            properties.RemoveAll(p => p == null);
+
+            var widest = NaughtyListDrawer.MeasureWidestLabel(properties);
 
             return widest > 0f ? Mathf.Min(widest, availableWidth * 0.6f) : 0f;
         }

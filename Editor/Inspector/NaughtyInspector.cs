@@ -30,12 +30,22 @@ namespace ColorlessCore.Inspector.Editor
             public HorizontalGroupAttribute Horizontal;
             public VerticalGroupAttribute Vertical;
 
+            private string _layer1Key;
+            private bool _layer1Computed;
+
             public string Key(int layer)
             {
                 switch (layer)
                 {
                     case 0: return Tab?.Group;
-                    case 1: return Foldout != null ? "f:" + Foldout.Name : Box != null ? "b:" + Box.Name : null;
+                    case 1:
+                        if (!_layer1Computed)
+                        {
+                            _layer1Key = Foldout != null ? "f:" + Foldout.Name : Box != null ? "b:" + Box.Name : null;
+                            _layer1Computed = true;
+                        }
+
+                        return _layer1Key;
                     case 2: return Horizontal?.Name;
                     case 3: return Vertical?.Name;
                     default: return null;
@@ -48,8 +58,8 @@ namespace ColorlessCore.Inspector.Editor
         }
 
         private List<SerializedProperty> _serializedProperties = new List<SerializedProperty>();
-        private IEnumerable<FieldInfo> _nonSerializedFields;
-        private IEnumerable<PropertyInfo> _nativeProperties;
+        private List<FieldInfo> _nonSerializedFields;
+        private List<PropertyInfo> _nativeProperties;
         private List<MethodInfo> _methods;
         private Dictionary<string, SavedBool> _foldouts = new Dictionary<string, SavedBool>();
         private string _foldoutPrefix = string.Empty;
@@ -96,11 +106,15 @@ namespace ColorlessCore.Inspector.Editor
             NaughtyListDrawer.BeginInspector(target);
             GetSerializedProperties(ref _serializedProperties);
 
-            var anyNaughtyAttribute = _serializedProperties.Any(p => PropertyUtility.GetAttribute<INaughtyAttribute>(p) != null || IsSerializeReference(p))
-                || _serializedProperties.Any(p => NaughtyListDrawer.IsList(p) || p.propertyType == SerializedPropertyType.Generic)
-                || _nonSerializedFields.Any()
-                || _nativeProperties.Any()
-                || _methods.Any();
+            var anyNaughtyAttribute = _nonSerializedFields.Count > 0 || _nativeProperties.Count > 0 || _methods.Count > 0;
+
+            for (var i = 0; i < _serializedProperties.Count && !anyNaughtyAttribute; i++)
+            {
+                var p = _serializedProperties[i];
+
+                anyNaughtyAttribute = PropertyUtility.GetAttribute<INaughtyAttribute>(p) != null || IsSerializeReference(p)
+                    || NaughtyListDrawer.IsList(p) || p.propertyType == SerializedPropertyType.Generic;
+            }
 
             if (!anyNaughtyAttribute)
             {
@@ -309,7 +323,7 @@ namespace ColorlessCore.Inspector.Editor
                 AddMember(CreateMemberItem(method), items, grouped);
             }
 
-            items = items.OrderBy(i => i.Order).ToList();
+            SortByOrder(items);
 
             foreach (var item in grouped)
             {
@@ -390,11 +404,17 @@ namespace ColorlessCore.Inspector.Editor
                         continue;
                     }
 
-                    var passThrough = items
-                        .Where(x => x.Key(depth) == null && FirstLayerFrom(x, depth + 1) == deeper && x.Key(deeper) == deeperKey)
-                        .ToList();
+                    var passThrough = new List<Item>();
 
-                    if (passThrough.Any(IsVisible))
+                    foreach (var x in items)
+                    {
+                        if (x.Key(depth) == null && FirstLayerFrom(x, depth + 1) == deeper && x.Key(deeper) == deeperKey)
+                        {
+                            passThrough.Add(x);
+                        }
+                    }
+
+                    if (AnyVisible(passThrough))
                     {
                         DrawLevel(passThrough, depth + 1);
                     }
@@ -408,15 +428,54 @@ namespace ColorlessCore.Inspector.Editor
                     continue;
                 }
 
-                var run = items.Where(x => x.Key(depth) == key).ToList();
+                var run = new List<Item>();
 
-                if (!run.Any(IsVisible))
+                foreach (var x in items)
+                {
+                    if (x.Key(depth) == key)
+                    {
+                        run.Add(x);
+                    }
+                }
+
+                if (!AnyVisible(run))
                 {
                     continue;
                 }
 
                 DrawGroup(run, depth, key);
             }
+        }
+
+        // Stable in-place insertion sort (no LINQ allocations)
+        private static void SortByOrder(List<Item> items)
+        {
+            for (var i = 1; i < items.Count; i++)
+            {
+                var current = items[i];
+                var j = i - 1;
+
+                while (j >= 0 && items[j].Order > current.Order)
+                {
+                    items[j + 1] = items[j];
+                    j--;
+                }
+
+                items[j + 1] = current;
+            }
+        }
+
+        private bool AnyVisible(List<Item> items)
+        {
+            foreach (var item in items)
+            {
+                if (IsVisible(item))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void DrawGroup(List<Item> run, int depth, string key)
@@ -442,16 +501,43 @@ namespace ColorlessCore.Inspector.Editor
 
         private void DrawTabs(List<Item> run, int depth, string key)
         {
-            var visible = run.Where(IsVisible).ToList();
-            var names = visible.Select(i => i.Tab.Name).Distinct().ToList();
+            var visible = new List<Item>(run.Count);
+            var names = new List<string>();
+
+            foreach (var item in run)
+            {
+                if (!IsVisible(item))
+                {
+                    continue;
+                }
+
+                visible.Add(item);
+
+                if (!names.Contains(item.Tab.Name))
+                {
+                    names.Add(item.Tab.Name);
+                }
+            }
+
             var stateKey = $"NaughtyTab.{target.GetType().Name}.{key}.{string.Join("|", names)}";
             var group = TabGroupUtility.Create(key, names, stateKey);
 
             group.Select(GUILayout.Toolbar(group.Selected, names.ToArray()));
 
-            var tabItems = visible.Where(i => i.Tab.Name == group.SelectedName).ToList();
+            var tabItems = new List<Item>(visible.Count);
+            var tabProperties = new List<SerializedProperty>(visible.Count);
+
+            foreach (var item in visible)
+            {
+                if (item.Tab.Name == group.SelectedName)
+                {
+                    tabItems.Add(item);
+                    tabProperties.Add(item.Property);
+                }
+            }
+
             var previousLabelWidth = EditorGUIUtility.labelWidth;
-            var widest = TabGroupUtility.MeasureLabelWidth(tabItems.Select(i => i.Property), EditorGUIUtility.currentViewWidth);
+            var widest = TabGroupUtility.MeasureLabelWidth(tabProperties, EditorGUIUtility.currentViewWidth);
 
             if (widest > 0f)
             {
@@ -487,7 +573,17 @@ namespace ColorlessCore.Inspector.Editor
                     ? PropertyUtility.GetAttribute<BoolTitleAttribute>(first)
                     : null;
 
-                var clean = run.Any(x => x.Foldout != null && x.Foldout.Clean);
+                var clean = false;
+
+                foreach (var x in run)
+                {
+                    if (x.Foldout != null && x.Foldout.Clean)
+                    {
+                        clean = true;
+
+                        break;
+                    }
+                }
 
                 if (boolTitle != null)
                 {
@@ -502,10 +598,7 @@ namespace ColorlessCore.Inspector.Editor
 
                     _foldouts[name].Value = EditorGUI.Foldout(new Rect(rect.x, rect.y, 5f, rect.height), _foldouts[name].Value, GUIContent.none, true);
 
-                    var titleStyle = new GUIStyle(EditorStyles.boldLabel)
-                    {
-                        fontSize = Mathf.Max(8, (EditorStyles.boldLabel.fontSize > 0 ? EditorStyles.boldLabel.fontSize : 12) - 1)
-                    };
+                    var titleStyle = GetBoolTitleStyle();
 
                     EditorGUI.BeginProperty(rect, content, first);
                     first.boolValue = EditorGUI.ToggleLeft(new Rect(rect.x + 5f, rect.y, rect.width - 5f, rect.height), content, first.boolValue, titleStyle);
@@ -528,7 +621,7 @@ namespace ColorlessCore.Inspector.Editor
 
                         using (new EditorGUI.DisabledScope(!enabled))
                         {
-                            DrawLevel(run.Skip(1).ToList(), depth + 1);
+                            DrawLevel(run.GetRange(1, run.Count - 1), depth + 1);
                         }
 
                         EditorGUI.indentLevel--;
@@ -591,6 +684,20 @@ namespace ColorlessCore.Inspector.Editor
         private static Texture2D _headerTexture;
         private static Texture2D _contentTexture;
         private static GUIStyle _contentStyle;
+        private static GUIStyle _boolTitleStyle;
+
+        private static GUIStyle GetBoolTitleStyle()
+        {
+            if (_boolTitleStyle == null)
+            {
+                _boolTitleStyle = new GUIStyle(EditorStyles.boldLabel)
+                {
+                    fontSize = Mathf.Max(8, (EditorStyles.boldLabel.fontSize > 0 ? EditorStyles.boldLabel.fontSize : 12) - 1)
+                };
+            }
+
+            return _boolTitleStyle;
+        }
 
         private static Texture2D MakeTexture(Color color)
         {
@@ -665,7 +772,7 @@ namespace ColorlessCore.Inspector.Editor
 
             foreach (var column in columns)
             {
-                if (!column.Any(IsVisible))
+                if (!AnyVisible(column))
                 {
                     continue;
                 }
@@ -870,7 +977,8 @@ namespace ColorlessCore.Inspector.Editor
             _foldoutPrefix = property.propertyPath + ".";
 
             EditorGUILayout.BeginVertical(GetBoxContentStyle());
-            DrawLevel(items.OrderBy(i => i.Order).ToList(), 0);
+            SortByOrder(items);
+            DrawLevel(items, 0);
             EditorGUILayout.EndVertical();
 
             _foldoutPrefix = previousPrefix;

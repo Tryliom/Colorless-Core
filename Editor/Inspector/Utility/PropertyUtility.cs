@@ -58,7 +58,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (fieldInfo == null)
             {
-                return new T[] { };
+                return System.Array.Empty<T>();
             }
 
             var key = (fieldInfo, typeof(T));

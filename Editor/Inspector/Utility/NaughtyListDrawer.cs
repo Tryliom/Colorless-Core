@@ -730,8 +730,12 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
+        /// <summary>Incremented each time the height caches are cleared; lets external drawers invalidate their own caches.</summary>
+        public static int CacheVersion { get; private set; }
+
         public static void ClearHeightCache()
         {
+            CacheVersion++;
             HeightCache.Clear();
             RunsCache.Clear();
             WidestLabelCache.Clear();
@@ -928,6 +932,14 @@ namespace ColorlessCore.Inspector.Editor
             }
             else
             {
+                // Plain fields never react to these events, so skipping them saves most of the cost of wheel scrolling
+                var eventType = Event.current.type;
+
+                if (eventType == EventType.ScrollWheel || eventType == EventType.MouseMove)
+                {
+                    return;
+                }
+
                 var previousLabelWidth = EditorGUIUtility.labelWidth;
 
                 EditorGUIUtility.labelWidth = _labelWidthOverride > 0f
@@ -1325,16 +1337,22 @@ namespace ColorlessCore.Inspector.Editor
 
             if (toggle.boolValue)
             {
-                return children.Skip(1).ToList();
+                return children.GetRange(1, children.Count - 1);
             }
 
             var previous = PropertyUtility.ForceVisible;
 
             PropertyUtility.ForceVisible = true;
 
-            var body = GetChildren(property)
-                .Where(c => c.propertyPath != toggle.propertyPath && PropertyUtility.GetAttribute<FoldoutAttribute>(c)?.Name == foldout.Name)
-                .ToList();
+            var body = new List<SerializedProperty>();
+
+            foreach (var c in GetChildren(property))
+            {
+                if (c.propertyPath != toggle.propertyPath && PropertyUtility.GetAttribute<FoldoutAttribute>(c)?.Name == foldout.Name)
+                {
+                    body.Add(c);
+                }
+            }
 
             PropertyUtility.ForceVisible = previous;
 
@@ -1460,11 +1478,26 @@ namespace ColorlessCore.Inspector.Editor
             {
                 if (IsLeaf(child))
                 {
-                    widest = Mathf.Max(widest, EditorStyles.boldLabel.CalcSize(new GUIContent(child.displayName)).x + 8f);
+                    widest = Mathf.Max(widest, GetLabelWidth(child.displayName));
                 }
             }
 
             return widest;
+        }
+
+        private static readonly Dictionary<string, float> LabelWidthCache = new();
+        private static readonly GUIContent MeasureContent = new GUIContent();
+
+        private static float GetLabelWidth(string text)
+        {
+            if (!LabelWidthCache.TryGetValue(text, out var width))
+            {
+                MeasureContent.text = text;
+                width = EditorStyles.boldLabel.CalcSize(MeasureContent).x + 8f;
+                LabelWidthCache[text] = width;
+            }
+
+            return width;
         }
 
         private static float _labelWidthOverride;
