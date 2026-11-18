@@ -77,6 +77,74 @@ namespace ColorlessCore.Inspector.Editor
 
             _methods = ReflectionUtility.GetAllMethods(
                 target, m => m.GetCustomAttributes(typeof(ButtonAttribute), true).Length > 0).ToList();
+
+            InvokeInspectorInit();
+        }
+
+        private void InvokeInspectorInit()
+        {
+            foreach (var field in _nonSerializedFields)
+            {
+                var init = field.GetCustomAttribute<OnInspectorInitAttribute>(true);
+
+                if (init == null)
+                {
+                    continue;
+                }
+
+                var callback = target.GetType().GetMethod(
+                    init.Callback,
+                    BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic,
+                    null,
+                    Type.EmptyTypes,
+                    null);
+
+                callback?.Invoke(target, null);
+            }
+        }
+
+        private static readonly Dictionary<DisplayAsStringAttribute, GUIStyle> DisplayAsStringStyles = new Dictionary<DisplayAsStringAttribute, GUIStyle>();
+
+        private static GUIStyle GetDisplayAsStringStyle(DisplayAsStringAttribute attribute)
+        {
+            if (DisplayAsStringStyles.TryGetValue(attribute, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var style = new GUIStyle(EditorStyles.label)
+            {
+                wordWrap = !attribute.Overflow,
+                richText = attribute.EnableRichText,
+                fontSize = attribute.FontSize > 0 ? attribute.FontSize : EditorStyles.label.fontSize,
+                alignment = attribute.Alignment == TextAlignment.Center ? TextAnchor.MiddleCenter
+                    : attribute.Alignment == TextAlignment.Right ? TextAnchor.MiddleRight
+                    : TextAnchor.MiddleLeft
+            };
+
+            DisplayAsStringStyles[attribute] = style;
+
+            return style;
+        }
+
+        private void DrawDisplayAsString(FieldInfo field, DisplayAsStringAttribute attribute, string label, object value)
+        {
+            var text = value?.ToString() ?? string.Empty;
+            var style = GetDisplayAsStringStyle(attribute);
+            var content = new GUIContent(text);
+
+            if (string.IsNullOrEmpty(label))
+            {
+                var width = EditorGUIUtility.currentViewWidth - InspectorStyle.DisplayAsStringHorizontalMargin;
+                var height = Mathf.Max(EditorGUIUtility.singleLineHeight, style.CalcHeight(content, width));
+                var rect = EditorGUILayout.GetControlRect(false, height);
+
+                EditorGUI.LabelField(rect, content, style);
+            }
+            else
+            {
+                EditorGUILayout.LabelField(label, text, style);
+            }
         }
 
         protected virtual void OnDisable()
@@ -333,6 +401,15 @@ namespace ColorlessCore.Inspector.Editor
 
                 if (index < 0)
                 {
+                    var anchor = FindPrecedingFieldIndex(items, item.Field);
+
+                    if (anchor >= 0)
+                    {
+                        items.Insert(anchor + 1, item);
+
+                        continue;
+                    }
+
                     index = items.FindIndex(i => i.Order > item.Order);
 
                     if (index < 0)
@@ -353,6 +430,32 @@ namespace ColorlessCore.Inspector.Editor
             DrawLevel(items, 0);
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        // A new group starts right after the closest field declared before its first member
+        private static int FindPrecedingFieldIndex(List<Item> items, FieldInfo field)
+        {
+            if (field == null)
+            {
+                return -1;
+            }
+
+            var index = -1;
+            var bestToken = -1;
+
+            for (var i = 0; i < items.Count; i++)
+            {
+                var other = items[i].Field;
+
+                if (other != null && other.DeclaringType == field.DeclaringType
+                    && other.MetadataToken < field.MetadataToken && other.MetadataToken > bestToken)
+                {
+                    bestToken = other.MetadataToken;
+                    index = i;
+                }
+            }
+
+            return index;
         }
 
         private static void AddMember(Item item, List<Item> items, List<Item> grouped)
@@ -1064,6 +1167,15 @@ namespace ColorlessCore.Inspector.Editor
                 || field.GetCustomAttribute<ReadOnlyAttribute>(true) != null
                 || !ButtonUtility.IsEnabled(target, field);
 
+            var displayAsString = field.GetCustomAttribute<DisplayAsStringAttribute>(true);
+
+            if (displayAsString != null)
+            {
+                DrawDisplayAsString(field, displayAsString, label, value);
+
+                return;
+            }
+
             if (value == null && !readOnly)
             {
                 if (typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType))
@@ -1111,6 +1223,26 @@ namespace ColorlessCore.Inspector.Editor
             if (readOnly)
             {
                 NaughtyEditorGUI.Field_Layout(value, label);
+
+                return;
+            }
+
+            var range = field.GetCustomAttribute<RangeAttribute>(true);
+
+            if (range != null && (value is int || value is float))
+            {
+                var slid = value is int intValue
+                    ? (object)EditorGUILayout.IntSlider(label, intValue, (int)range.min, (int)range.max)
+                    : EditorGUILayout.Slider(label, (float)value, range.min, range.max);
+
+                if (!Equals(value, slid))
+                {
+                    Undo.RecordObject(target, "Change " + field.Name);
+                    field.SetValue(owner, slid);
+                    EditorUtility.SetDirty(target);
+                    InvokeValueChanged(field);
+                    serializedObject.Update();
+                }
 
                 return;
             }

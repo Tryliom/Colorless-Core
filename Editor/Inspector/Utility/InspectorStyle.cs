@@ -87,5 +87,6 @@ namespace ColorlessCore.Inspector.Editor
         public const float MinMaxSliderFieldWidth = 50f;
         public const float BrowseButtonWidth = 60f;
         public const float BoxHeaderHeight = 26f;
+        public const float DisplayAsStringHorizontalMargin = 40f;
     }
 }
