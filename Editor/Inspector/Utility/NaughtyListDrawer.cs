@@ -271,12 +271,36 @@ namespace ColorlessCore.Inspector.Editor
 
             var height = 0f;
 
-            foreach (var child in children)
+            foreach (var run in GetRuns(value))
             {
-                height += GetElementHeight(child, false) + EditorGUIUtility.standardVerticalSpacing;
+                if (run.Foldout != null && IsBoxedContainerRun(run))
+                {
+                    height += GetContainerHeight(run.Children[0], false, false) + EditorGUIUtility.standardVerticalSpacing;
+
+                    continue;
+                }
+
+                if (run.Foldout != null)
+                {
+                    height += GetFoldoutRunHeight(value, run.Foldout, run.Children);
+
+                    continue;
+                }
+
+                foreach (var child in run.Children)
+                {
+                    height += GetElementHeight(child, false) + EditorGUIUtility.standardVerticalSpacing;
+                }
             }
 
-            return height - EditorGUIUtility.standardVerticalSpacing;
+            return Mathf.Max(0f, height - EditorGUIUtility.standardVerticalSpacing);
+        }
+
+        // A single container wrapped in a same-named Foldout is drawn as a regular boxed container, like its nested ones
+        private static bool IsBoxedContainerRun((FoldoutAttribute Foldout, List<SerializedProperty> Children) run)
+        {
+            return run.Foldout != null && !run.Foldout.Clean && run.Children.Count == 1 && IsContainer(run.Children[0])
+                && string.Equals(run.Foldout.Name, run.Children[0].displayName, StringComparison.OrdinalIgnoreCase);
         }
 
         private static void DrawDictionaryValue(Rect rect, SerializedProperty value)
@@ -292,12 +316,33 @@ namespace ColorlessCore.Inspector.Editor
 
             var y = rect.y;
 
-            foreach (var child in children)
+            foreach (var run in GetRuns(value))
             {
-                var childHeight = GetElementHeight(child, false);
+                if (run.Foldout != null && IsBoxedContainerRun(run))
+                {
+                    var container = run.Children[0];
+                    var containerHeight = GetContainerHeight(container, false, false);
 
-                Field(new Rect(rect.x, y, rect.width, childHeight), child, null, false, true);
-                y += childHeight + EditorGUIUtility.standardVerticalSpacing;
+                    DrawContainer(new Rect(rect.x, y, rect.width, containerHeight), container, null, false, false);
+                    y += containerHeight + EditorGUIUtility.standardVerticalSpacing;
+
+                    continue;
+                }
+
+                if (run.Foldout != null)
+                {
+                    DrawFoldoutRun(rect, value, run.Foldout, run.Children, ref y);
+
+                    continue;
+                }
+
+                foreach (var child in run.Children)
+                {
+                    var childHeight = GetElementHeight(child, false);
+
+                    Field(new Rect(rect.x, y, rect.width, childHeight), child, null, false, true);
+                    y += childHeight + EditorGUIUtility.standardVerticalSpacing;
+                }
             }
         }
 
@@ -664,8 +709,12 @@ namespace ColorlessCore.Inspector.Editor
 
         private static bool IsInline(SerializedProperty property)
         {
+            // A field wrapped in a Foldout of the same name would repeat its header, so it is drawn flat
+            var foldout = PropertyUtility.GetAttribute<FoldoutAttribute>(property);
+
             return PropertyUtility.GetAttribute<InlinePropertyAttribute>(property) != null
-                || PropertyUtility.GetAttribute<HideLabelAttribute>(property) != null;
+                || PropertyUtility.GetAttribute<HideLabelAttribute>(property) != null
+                || foldout != null && string.Equals(foldout.Name, property.displayName, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -673,7 +722,8 @@ namespace ColorlessCore.Inspector.Editor
         /// </summary>
         public static bool IsContainer(SerializedProperty property)
         {
-            if (property.isArray || !property.hasVisibleChildren)
+            // Children of a [HideInInspector] field (like dictionary values) are flagged hidden, so hasVisibleChildren is false for them
+            if (property.isArray || !property.hasChildren)
             {
                 return false;
             }
@@ -831,14 +881,17 @@ namespace ColorlessCore.Inspector.Editor
             var iterator = property.Copy();
             var end = iterator.GetEndProperty();
 
-            if (!iterator.NextVisible(true))
+            // Under a hidden ancestor NextVisible skips everything, so iterate with Next instead
+            var underHidden = !property.hasVisibleChildren;
+
+            if (!(underHidden ? iterator.Next(true) : iterator.NextVisible(true)))
             {
                 yield break;
             }
 
             do
             {
-                if (SerializedProperty.EqualContents(iterator, end))
+                if (SerializedProperty.EqualContents(iterator, end) || iterator.depth <= property.depth)
                 {
                     yield break;
                 }
@@ -848,7 +901,7 @@ namespace ColorlessCore.Inspector.Editor
                     yield return iterator.Copy();
                 }
             }
-            while (iterator.NextVisible(false));
+            while (underHidden ? iterator.Next(false) : iterator.NextVisible(false));
         }
 
         private static float GetContainerHeight(SerializedProperty property, bool flat, bool plain)
@@ -888,36 +941,110 @@ namespace ColorlessCore.Inspector.Editor
                     continue;
                 }
 
-                var toggle = GetToggle(run.Children);
-                var body = GetBody(property, run.Foldout, run.Children, toggle);
-
-                if (run.Foldout.Clean)
-                {
-                    height += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-
-                    if (IsFoldoutOpen(property, run.Foldout.Name))
-                    {
-                        height += GetBodyHeight(toggle, body);
-                    }
-
-                    continue;
-                }
-
-                height += BoxHeaderHeight;
-
-                if (IsFoldoutOpen(property, run.Foldout.Name))
-                {
-                    height += BoxPadding * 2f + GetBodyHeight(toggle, body);
-                }
-
-                height += BoxPadding;
+                height += GetFoldoutRunHeight(property, run.Foldout, run.Children);
             }
 
             return height;
         }
 
-        private const float BoxHeaderHeight = 22f;
+        private static float GetFoldoutRunHeight(SerializedProperty property, FoldoutAttribute foldout, List<SerializedProperty> children)
+        {
+            var height = 0f;
+            var toggle = GetToggle(children);
+            var body = GetBody(property, foldout, children, toggle);
+
+            if (foldout.Clean)
+            {
+                height += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+
+                if (IsFoldoutOpen(property, foldout.Name))
+                {
+                    height += GetBodyHeight(toggle, body) + GetButtonsHeight(property, foldout);
+                }
+
+                return height;
+            }
+
+            height += BoxHeaderHeight;
+
+            if (IsFoldoutOpen(property, foldout.Name))
+            {
+                height += BoxPadding * 2f + GetBodyHeight(toggle, body) + GetButtonsHeight(property, foldout);
+            }
+
+            height += BoxPadding;
+
+            return height;
+        }
+
+        private static readonly Dictionary<(Type Type, string Foldout), List<System.Reflection.MethodInfo>> ButtonCache = new();
+
+        // [Button] methods tagged with the same [Foldout] are drawn at the end of that foldout
+        private static List<System.Reflection.MethodInfo> GetButtons(SerializedProperty property, FoldoutAttribute foldout)
+        {
+            var target = PropertyUtility.GetTargetObjectOfProperty(property);
+
+            if (target == null)
+            {
+                return null;
+            }
+
+            var key = (target.GetType(), foldout.Name);
+
+            if (ButtonCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            var buttons = target.GetType().GetMethods(flags)
+                .Where(m => m.GetCustomAttributes(typeof(ButtonAttribute), true).Length > 0
+                    && m.GetParameters().All(p => p.IsOptional)
+                    && m.GetCustomAttributes(typeof(FoldoutAttribute), true).Cast<FoldoutAttribute>().Any(f => f.Name == foldout.Name))
+                .ToList();
+
+            ButtonCache[key] = buttons;
+
+            return buttons;
+        }
+
+        private static float GetButtonsHeight(SerializedProperty property, FoldoutAttribute foldout)
+        {
+            var buttons = GetButtons(property, foldout);
+
+            return buttons == null ? 0f : buttons.Count * (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing);
+        }
+
+        private static void DrawButtons(Rect rect, SerializedProperty property, FoldoutAttribute foldout, ref float y)
+        {
+            var buttons = GetButtons(property, foldout);
+
+            if (buttons == null)
+            {
+                return;
+            }
+
+            var target = PropertyUtility.GetTargetObjectOfProperty(property);
+
+            foreach (var method in buttons)
+            {
+                var attribute = (ButtonAttribute)method.GetCustomAttributes(typeof(ButtonAttribute), true)[0];
+                var text = string.IsNullOrEmpty(attribute.Text) ? ObjectNames.NicifyVariableName(method.Name) : attribute.Text;
+
+                if (GUI.Button(new Rect(rect.x, y, rect.width, EditorGUIUtility.singleLineHeight), text))
+                {
+                    method.Invoke(target, method.GetParameters().Select(p => p.DefaultValue).ToArray());
+                }
+
+                y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+            }
+        }
+
+        private const float BoxHeaderHeight = HeaderHeight + HeaderPadding * 2f;
         private const float BoxPadding = 3f;
+        private const float ContainerIndent = 14f;
+        private const float BodyIndentLeft = 16f;
+        private const float BodyIndentRight = 4f;
 
         private static SerializedProperty GetToggle(List<SerializedProperty> children)
         {
@@ -1122,7 +1249,10 @@ namespace ColorlessCore.Inspector.Editor
 
                 if (open)
                 {
-                    DrawBody(new Rect(rect.x + 8f, rect.y, rect.width - 8f, rect.height), body, toggle, ref y);
+                    var cleanRect = new Rect(rect.x + 8f, rect.y, rect.width - 8f, rect.height);
+
+                    DrawBody(cleanRect, body, toggle, ref y);
+                    DrawButtons(cleanRect, property, foldout, ref y);
                 }
 
                 return;
@@ -1135,7 +1265,7 @@ namespace ColorlessCore.Inspector.Editor
 
             EditorGUI.DrawRect(header, headerColor);
 
-            var foldoutRect = new Rect(header.x + 14f, header.y + 3f, header.width - 14f, EditorGUIUtility.singleLineHeight);
+            var foldoutRect = new Rect(header.x + 18f, header.y + (BoxHeaderHeight - EditorGUIUtility.singleLineHeight) * 0.5f, header.width - 18f, EditorGUIUtility.singleLineHeight);
 
             open = DrawFoldoutHeader(foldoutRect, open, foldout, toggle, true);
             SessionState.SetBool(key, open);
@@ -1143,12 +1273,14 @@ namespace ColorlessCore.Inspector.Editor
 
             if (open)
             {
-                var contentHeight = BoxPadding * 2f + GetBodyHeight(toggle, body);
+                var contentHeight = BoxPadding * 2f + GetBodyHeight(toggle, body) + GetButtonsHeight(property, foldout);
+                var bodyRect = new Rect(rect.x + ContainerIndent, rect.y, rect.width - ContainerIndent * 2f, rect.height);
 
                 EditorGUI.DrawRect(new Rect(rect.x, y, rect.width, contentHeight), contentColor);
                 y += BoxPadding;
 
-                DrawBody(new Rect(rect.x + 16f, rect.y, rect.width - 20f, rect.height), body, toggle, ref y);
+                DrawBody(bodyRect, body, toggle, ref y);
+                DrawButtons(bodyRect, property, foldout, ref y);
                 y += BoxPadding;
             }
 
@@ -1218,7 +1350,7 @@ namespace ColorlessCore.Inspector.Editor
                 y = header.yMax + BoxPadding;
             }
 
-            var indent = flat ? 0f : 14f;
+            var indent = flat ? 0f : ContainerIndent;
 
             var inner = new Rect(rect.x + indent, rect.y, rect.width - indent * 2f, rect.height);
 
