@@ -283,6 +283,9 @@ namespace ColorlessCore.Inspector.Editor
                 keys.arraySize = 0;
                 values.arraySize = 0;
             }));
+            PropertyPathContextMenu.AddItems(menu, index >= 0
+                ? property.FindPropertyRelative("valueData").GetArrayElementAtIndex(index).propertyPath
+                : path);
             menu.ShowAsContext();
         }
 
@@ -2277,6 +2280,7 @@ namespace ColorlessCore.Inspector.Editor
 
             menu.AddSeparator(string.Empty);
             menu.AddItem(new GUIContent("Clear"), false, () => Apply(list => list.arraySize = 0));
+            PropertyPathContextMenu.AddItems(menu, index >= 0 ? property.GetArrayElementAtIndex(index).propertyPath : path);
             menu.ShowAsContext();
         }
 

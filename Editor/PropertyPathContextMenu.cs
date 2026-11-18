@@ -17,8 +17,15 @@ public static class PropertyPathContextMenu
 
 	private static void OnPropertyContextMenu(GenericMenu menu, SerializedProperty property)
 	{
-		var path = property.propertyPath;
+		AddItems(menu, property.propertyPath);
+	}
 
+	/// <summary>
+	/// Adds the "Copy as Description Variable" entries for the given property path.
+	/// Used by custom list/dictionary drawers that build their own context menu.
+	/// </summary>
+	public static void AddItems(GenericMenu menu, string path)
+	{
 		menu.AddSeparator("");
 		menu.AddItem(new GUIContent("Copy as Description Variable"), false, () =>
 		{
