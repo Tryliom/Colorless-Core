@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +16,10 @@ namespace ColorlessCore.Inspector.Editor
     {
         private const BindingFlags MemberFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
         private const float RowButtonWidth = 22f;
+        private const float RowPadding = 3f;
         private const float MinColumnWidth = 60f;
         private const float NestedLabelWidth = 70f;
+        private static int _currentRow;
         private const int MaxDepth = 4;
 
         private class Member
@@ -31,17 +33,24 @@ namespace ColorlessCore.Inspector.Editor
             public MethodInfo Method;
             public string ButtonText;
             public bool ReadOnly;
+            public float LabelWidth = -1f;
         }
 
         private class Column
         {
             public string Key;
             public string Header;
+            public float CellX;
+            public float CellWidth;
             public bool Horizontal;
             public int Order;
             public int Index;
             public float Width;
             public float ComputedWidth;
+            public bool FillRest;
+            public float Preferred = -1f;
+            public float LabelWidth;
+            public bool Flex;
             public List<Member> Members = new List<Member>();
         }
 
@@ -55,6 +64,7 @@ namespace ColorlessCore.Inspector.Editor
         private static SerializedProperty _elementProperty;
         private static HashSet<Type> _drawerTypes;
         private static float _lastWidth;
+        private static bool _fallbackExpanded = true;
         private static readonly Dictionary<(int, string), float> MeasuredHeights = new Dictionary<(int, string), float>();
 
         private static (int, string) MeasureKey(SerializedProperty property)
@@ -78,7 +88,7 @@ namespace ColorlessCore.Inspector.Editor
                 return height;
             }
 
-            return 22f + 22f + Mathf.Max(0, property.arraySize) * 26f + 4f;
+            return 32f + 22f + Mathf.Max(0, property.arraySize) * 26f + 4f;
         }
 
         public static void Draw(IList list, UnityEngine.Object owner, string label, bool isReadOnly, Action<bool> onChanged = null,
@@ -98,20 +108,22 @@ namespace ColorlessCore.Inspector.Editor
                 _lastWidth = outer.width;
             }
 
-            DrawHeader(list, label, elementType, canEdit, ref changed);
+            var expanded = DrawHeader(list, label, elementType, canEdit, ref changed);
 
             var columns = BuildColumns(list);
 
             ComputeWidths(columns, canEdit);
 
-            if (list.Count > 0 && columns.Count > 0)
+            var headerRect = Rect.zero;
+
+            if (expanded && list.Count > 0 && columns.Count > 0)
             {
-                DrawColumnHeaders(columns, canEdit);
+                headerRect = DrawColumnHeaders(columns, canEdit);
             }
 
             var removeAt = -1;
 
-            for (var i = 0; i < list.Count; i++)
+            for (var i = 0; expanded && i < list.Count; i++)
             {
                 if (DrawRow(list, i, columns, canEdit, isReadOnly, ref changed))
                 {
@@ -124,6 +136,7 @@ namespace ColorlessCore.Inspector.Editor
             if (Event.current.type == EventType.Repaint)
             {
                 DrawBorder(outer);
+                DrawSeparators(columns, headerRect, outer);
 
                 if (listProperty != null && outer.height > 1f)
                 {
@@ -153,18 +166,45 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
-        private static void DrawHeader(IList list, string label, Type elementType, bool canEdit, ref bool changed)
+        private const float CellSidePadding = 2f;
+        private const float CellRightPadding = 8f;
+
+        private static void DrawSeparators(List<Column> columns, Rect headerRect, Rect outer)
         {
-            var rect = EditorGUILayout.GetControlRect(false, 22f);
+            if (headerRect.height <= 0f)
+            {
+                return;
+            }
+
+            var color = EditorGUIUtility.isProSkin ? new Color(0.13f, 0.13f, 0.13f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
+
+            for (var i = 1; i < columns.Count; i++)
+            {
+                if (columns[i].CellWidth <= 0f)
+                {
+                    continue;
+                }
+
+                EditorGUI.DrawRect(new Rect(columns[i].CellX - 3f, headerRect.y, 1f, outer.yMax - headerRect.y), color);
+            }
+        }
+
+        private static bool DrawHeader(IList list, string label, Type elementType, bool canEdit, ref bool changed)
+        {
+            var rect = EditorGUILayout.GetControlRect(false, 22f + 10f);
+            var line = new Rect(rect.x, rect.y + 5f, rect.width, 22f);
 
             if (Event.current.type == EventType.Repaint)
             {
-                EditorGUI.DrawRect(rect, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                var background = new Rect(rect.x - 2f, rect.y, rect.width + 4f, rect.height);
+
+                EditorGUI.DrawRect(background, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
             }
 
             var addWidth = canEdit ? RowButtonWidth + 4f : 0f;
-            var labelRect = new Rect(rect.x + 6f, rect.y, rect.width - addWidth - 90f, rect.height);
-            var countRect = new Rect(rect.xMax - addWidth - 86f, rect.y, 80f, rect.height);
+            var labelRect = new Rect(line.x + 18f, line.y, line.width - addWidth - 108f, line.height);
+            var countRect = new Rect(line.xMax - addWidth - 86f, line.y, 80f, line.height);
+            var expanded = _listProperty != null ? _listProperty.isExpanded : _fallbackExpanded;
             var countStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, fontSize = 12 };
 
             if (list.Count == 0)
@@ -172,10 +212,20 @@ namespace ColorlessCore.Inspector.Editor
                 countStyle.normal.textColor = Color.gray;
             }
 
-            EditorGUI.LabelField(labelRect, label, EditorStyles.boldLabel);
-            EditorGUI.LabelField(countRect, list.Count == 0 ? "Empty" : list.Count == 1 ? "1 Element" : list.Count + " Elements", countStyle);
+            expanded = EditorGUI.Foldout(labelRect, expanded, label, true, EditorStyles.foldout);
 
-            if (canEdit && GUI.Button(new Rect(rect.xMax - RowButtonWidth - 2f, rect.y + 1f, RowButtonWidth, rect.height - 2f),
+            if (_listProperty != null)
+            {
+                _listProperty.isExpanded = expanded;
+            }
+            else
+            {
+                _fallbackExpanded = expanded;
+            }
+
+            EditorGUI.LabelField(countRect, list.Count == 0 ? "Empty" : list.Count == 1 ? "1 Item" : list.Count + " Items", countStyle);
+
+            if (canEdit && GUI.Button(new Rect(line.xMax - RowButtonWidth, line.y + (line.height - 18f) * 0.5f, RowButtonWidth, 18f),
                     EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton))
             {
                 AddElement(list, elementType, () =>
@@ -184,9 +234,15 @@ namespace ColorlessCore.Inspector.Editor
                     GUI.changed = true;
                 });
             }
+
+            return expanded;
         }
 
-        private static void DrawColumnHeaders(List<Column> columns, bool canEdit)
+        private static GUIStyle _headerStyle;
+
+        private static GUIStyle HeaderStyle => _headerStyle ??= new GUIStyle(EditorStyles.label) { fontStyle = FontStyle.Normal, fontSize = 12, clipping = TextClipping.Clip, alignment = TextAnchor.MiddleCenter };
+
+        private static Rect DrawColumnHeaders(List<Column> columns, bool canEdit)
         {
             var rect = EditorGUILayout.BeginHorizontal();
 
@@ -195,17 +251,38 @@ namespace ColorlessCore.Inspector.Editor
                 EditorGUI.DrawRect(rect, EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.78f, 0.78f, 0.78f));
             }
 
-            foreach (var column in columns)
-            {
-                GUILayout.Label(column.Header == "-" ? string.Empty : column.Header, EditorStyles.miniBoldLabel, ColumnOptions(column));
-            }
+            // Headers follow the real cell positions of the first row (previous repaint) so they stay aligned when cells overflow.
+            var aligned = columns.All(c => c.CellWidth > 0f);
 
-            if (canEdit)
+            if (aligned)
             {
-                GUILayout.Space(RowButtonWidth);
+                var labelRect = GUILayoutUtility.GetRect(0f, EditorGUIUtility.singleLineHeight, HeaderStyle, GUILayout.ExpandWidth(true));
+
+                for (var i = 0; i < columns.Count; i++)
+                {
+                    var column = columns[i];
+
+                    GUI.Label(new Rect(column.CellX, labelRect.y, column.CellWidth, labelRect.height), column.Header == "-" ? string.Empty : column.Header, HeaderStyle);
+                }
+            }
+            else
+            {
+                GUILayout.Space(RowPadding);
+
+                foreach (var column in columns)
+                {
+                    GUILayout.Label(column.Header == "-" ? string.Empty : column.Header, HeaderStyle, ColumnOptions(column));
+                }
+
+                if (canEdit)
+                {
+                    GUILayout.Space(RowButtonWidth);
+                }
             }
 
             EditorGUILayout.EndHorizontal();
+
+            return rect;
         }
 
         private static bool DrawRow(IList list, int index, List<Column> columns, bool canEdit, bool readOnly, ref bool changed)
@@ -213,16 +290,22 @@ namespace ColorlessCore.Inspector.Editor
             var remove = false;
             var element = list[index];
 
+            _currentRow = index;
+
             _elementProperty = _listProperty != null && _listProperty.isArray && index < _listProperty.arraySize
                 ? _listProperty.GetArrayElementAtIndex(index)
                 : null;
 
-            var rect = EditorGUILayout.BeginHorizontal();
+            var rect = EditorGUILayout.BeginVertical();
 
             if (Event.current.type == EventType.Repaint)
             {
                 EditorGUI.DrawRect(rect, index % 2 == 0 ? new Color(1f, 1f, 1f, 0.04f) : new Color(0f, 0f, 0f, 0.09f));
             }
+
+            GUILayout.Space(RowPadding);
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(RowPadding);
 
             if (element == null)
             {
@@ -255,26 +338,29 @@ namespace ColorlessCore.Inspector.Editor
 
             if (canEdit)
             {
-                GUILayout.FlexibleSpace();
-                GUILayout.BeginVertical(GUILayout.Width(RowButtonWidth));
-                GUILayout.FlexibleSpace();
+                // Reserve the button slot in the layout, the button itself is drawn at the row's right edge below.
+                GUILayout.Space(RowButtonWidth);
+            }
 
+            EditorGUILayout.EndHorizontal();
+            GUILayout.Space(RowPadding);
+            EditorGUILayout.EndVertical();
+
+            if (canEdit)
+            {
+                var rowRect = GUILayoutUtility.GetLastRect();
                 var removeStyle = new GUIStyle(EditorStyles.iconButton)
                 {
                     alignment = TextAnchor.MiddleCenter,
                     padding = new RectOffset(0, 0, 0, 0)
                 };
+                var buttonRect = new Rect(rowRect.xMax - RowButtonWidth, rowRect.y + (rowRect.height - 20f) * 0.5f, RowButtonWidth - 2f, 20f);
 
-                if (GUILayout.Button("x", removeStyle, GUILayout.Width(RowButtonWidth - 2f), GUILayout.Height(20f)))
+                if (GUI.Button(buttonRect, "x", removeStyle))
                 {
                     remove = true;
                 }
-
-                GUILayout.FlexibleSpace();
-                GUILayout.EndVertical();
             }
-
-            EditorGUILayout.EndHorizontal();
 
             return remove;
         }
@@ -289,20 +375,33 @@ namespace ColorlessCore.Inspector.Editor
                 CellMembersCache[cellKey] = members;
             }
 
-            if (column.Horizontal)
+            var cellRect = column.Horizontal
+                ? EditorGUILayout.BeginHorizontal(ColumnOptions(column))
+                : EditorGUILayout.BeginVertical(ColumnOptions(column));
+
+            if (Event.current.type == EventType.Repaint && (_currentRow == 0 || column.CellWidth <= 0f))
             {
-                EditorGUILayout.BeginHorizontal(ColumnOptions(column));
-            }
-            else
-            {
-                EditorGUILayout.BeginVertical(ColumnOptions(column));
+                column.CellX = cellRect.x;
+                column.CellWidth = cellRect.width;
             }
 
             var showLabels = members.Count > 1 && !column.Horizontal;
 
+            GUILayout.BeginHorizontal();
+            GUILayout.Space(CellSidePadding);
+
+            if (column.Horizontal)
+            {
+                EditorGUILayout.BeginHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.BeginVertical();
+            }
+
             foreach (var member in members)
             {
-                if (DrawMember(member, element, showLabels && !member.HideLabel, readOnly))
+                if (DrawMember(member, element, showLabels && !member.HideLabel, readOnly, column.LabelWidth, column.FillRest))
                 {
                     changed = true;
                 }
@@ -316,10 +415,27 @@ namespace ColorlessCore.Inspector.Editor
             {
                 EditorGUILayout.EndVertical();
             }
+
+            GUILayout.Space(CellRightPadding);
+            GUILayout.EndHorizontal();
+
+            if (column.Horizontal)
+            {
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.EndVertical();
+            }
         }
 
-        private static bool DrawMember(Member member, object element, bool showLabel, bool readOnly)
+        private static bool DrawMember(Member member, object element, bool showLabel, bool readOnly, float labelWidth, bool fillRest = false)
         {
+            if (labelWidth <= 0f)
+            {
+                labelWidth = NestedLabelWidth;
+            }
+
             var label = showLabel ? ObjectNames.NicifyVariableName(member.Name) : string.Empty;
 
             if (member.Method != null)
@@ -373,10 +489,17 @@ namespace ColorlessCore.Inspector.Editor
 
                 if (property != null)
                 {
+                    var previousLabelWidth = EditorGUIUtility.labelWidth;
+
+                    EditorGUIUtility.labelWidth = string.IsNullOrEmpty(label) ? 1f : labelWidth;
                     EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(property, new GUIContent(label), true);
 
-                    if (EditorGUI.EndChangeCheck())
+                    var propertyChanged = EditorGUI.EndChangeCheck();
+
+                    EditorGUIUtility.labelWidth = previousLabelWidth;
+
+                    if (propertyChanged)
                     {
                         Mark();
                         property.serializedObject.ApplyModifiedProperties();
@@ -386,7 +509,7 @@ namespace ColorlessCore.Inspector.Editor
                 }
             }
 
-            if (!DrawValue(ref value, label, memberReadOnly, 0, member.Field?.FieldType ?? member.Property.PropertyType))
+            if (!DrawValue(ref value, label, memberReadOnly, 0, member.Field?.FieldType ?? member.Property.PropertyType, labelWidth))
             {
                 return false;
             }
@@ -398,12 +521,12 @@ namespace ColorlessCore.Inspector.Editor
         }
 
         /// <summary>Draws any value. Returns true when the value changed and must be written back by the caller.</summary>
-        private static bool DrawValue(ref object value, string label, bool readOnly, int depth, Type declaredType = null)
+        private static bool DrawValue(ref object value, string label, bool readOnly,         int depth, Type declaredType = null, float labelWidth = NestedLabelWidth)
         {
             var type = value?.GetType() ?? declaredType;
             var oldLabelWidth = EditorGUIUtility.labelWidth;
 
-            EditorGUIUtility.labelWidth = string.IsNullOrEmpty(label) ? 1f : NestedLabelWidth;
+                    EditorGUIUtility.labelWidth = string.IsNullOrEmpty(label) ? 1f : labelWidth;
 
             try
             {
@@ -501,12 +624,14 @@ namespace ColorlessCore.Inspector.Editor
                 EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel);
             }
 
+            var nestedLabelWidth = members.Where(m => !m.HideLabel).Select(MeasureLabel).DefaultIfEmpty(NestedLabelWidth).Max();
+
             foreach (var member in members)
             {
                 var value = member.Field != null ? member.Field.GetValue(obj) : member.Property.GetValue(obj);
                 var memberLabel = member.HideLabel ? string.Empty : ObjectNames.NicifyVariableName(member.Name);
 
-                if (!DrawValue(ref value, memberLabel, readOnly || member.ReadOnly, depth + 1, member.Field?.FieldType ?? member.Property.PropertyType))
+                if (!DrawValue(ref value, memberLabel, readOnly || member.ReadOnly, depth + 1, member.Field?.FieldType ?? member.Property.PropertyType, nestedLabelWidth))
                 {
                     continue;
                 }
@@ -529,7 +654,7 @@ namespace ColorlessCore.Inspector.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(string.IsNullOrEmpty(label) ? "List" : label, EditorStyles.miniBoldLabel);
-            EditorGUILayout.LabelField(list.Count + (list.Count == 1 ? " Element" : " Elements"), EditorStyles.miniLabel, GUILayout.Width(75f));
+            EditorGUILayout.LabelField(list.Count + (list.Count == 1 ? " Item" : " Items"), EditorStyles.miniLabel, GUILayout.Width(75f));
 
             if (canEdit && GUILayout.Button(EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton, GUILayout.Width(RowButtonWidth)))
             {
@@ -833,6 +958,11 @@ namespace ColorlessCore.Inspector.Editor
 
         private static GUILayoutOption[] ColumnOptions(Column column)
         {
+            if (column.FillRest)
+            {
+                return new[] { GUILayout.MinWidth(column.ComputedWidth), GUILayout.ExpandWidth(true) };
+            }
+
             return new[] { GUILayout.Width(column.ComputedWidth), GUILayout.ExpandWidth(false) };
         }
 
@@ -840,15 +970,172 @@ namespace ColorlessCore.Inspector.Editor
         private static void ComputeWidths(List<Column> columns, bool canEdit)
         {
             var available = _lastWidth > 1f ? _lastWidth : EditorGUIUtility.currentViewWidth - 40f;
-            var fixedWidth = columns.Where(c => c.Width > 0f).Sum(c => c.Width);
-            var flexCount = columns.Count(c => c.Width <= 0f);
-            var spacing = columns.Count * 4f + 12f + (canEdit ? RowButtonWidth + 4f : 0f);
-            var flexWidth = flexCount > 0 ? Mathf.Max(MinColumnWidth, (available - fixedWidth - spacing) / flexCount) : 0f;
+            var spacing = columns.Count * 4f + 10f + (canEdit ? RowButtonWidth : 0f);
+            var total = spacing;
+            var autoCount = 0;
+            var flexCount = 0;
+            var autoPreferred = 0f;
 
             foreach (var column in columns)
             {
-                column.ComputedWidth = column.Width > 0f ? column.Width : flexWidth;
+                if (column.Width > 0f)
+                {
+                    total += column.Width;
+
+                    continue;
+                }
+
+                EnsurePreferred(column);
+                total += column.Preferred;
+                autoPreferred += column.Preferred;
+                autoCount++;
+
+                if (column.Flex)
+                {
+                    flexCount++;
+                }
             }
+
+            var extra = available - total;
+            Column fillColumn = null;
+
+            foreach (var column in columns)
+            {
+                column.FillRest = false;
+
+                if (column.Width <= 0f && (column.Flex || flexCount == 0))
+                {
+                    fillColumn = column;
+                }
+            }
+
+            if (fillColumn != null)
+            {
+                fillColumn.FillRest = true;
+            }
+
+            foreach (var column in columns)
+            {
+                if (column.Width > 0f)
+                {
+                    column.ComputedWidth = column.Width;
+
+                    continue;
+                }
+
+                if (extra >= 0f)
+                {
+                    var share = flexCount > 0 ? (column.Flex ? extra / flexCount : 0f) : extra / Mathf.Max(1, autoCount);
+
+                    column.ComputedWidth = column.Preferred + share;
+                }
+                else
+                {
+                    column.ComputedWidth = Mathf.Max(MinColumnWidth * 0.5f, column.Preferred + extra * column.Preferred / Mathf.Max(1f, autoPreferred));
+                }
+            }
+        }
+
+        private static void EnsurePreferred(Column column)
+        {
+            if (column.Preferred >= 0f)
+            {
+                return;
+            }
+
+            var labeled = !column.Horizontal && column.Members.Count > 1;
+            var preferred = 0f;
+
+            column.LabelWidth = 0f;
+
+            foreach (var member in column.Members)
+            {
+                if (labeled && !member.HideLabel)
+                {
+                    column.LabelWidth = Mathf.Max(column.LabelWidth, MeasureLabel(member));
+                }
+            }
+
+            foreach (var member in column.Members)
+            {
+                var fieldWidth = PreferredFieldWidth(member, out var flex);
+                var labelWidth = labeled && !member.HideLabel ? column.LabelWidth : 0f;
+
+                column.Flex |= flex;
+
+                if (column.Horizontal)
+                {
+                    preferred += fieldWidth + 4f;
+                }
+                else
+                {
+                    preferred = Mathf.Max(preferred, labelWidth + fieldWidth);
+                }
+            }
+
+            var header = string.IsNullOrEmpty(column.Header) ? 0f : EditorStyles.boldLabel.CalcSize(new GUIContent(column.Header)).x + 8f;
+
+            column.Preferred = Mathf.Max(preferred, header, 24f);
+        }
+
+        private static float MeasureLabel(Member member)
+        {
+            if (member.LabelWidth < 0f)
+            {
+                member.LabelWidth = EditorStyles.label.CalcSize(new GUIContent(ObjectNames.NicifyVariableName(member.Name))).x + 14f;
+            }
+
+            return member.LabelWidth;
+        }
+
+        private static float PreferredFieldWidth(Member member, out bool flex)
+        {
+            flex = false;
+
+            if (member.Method != null)
+            {
+                return EditorStyles.miniButton.CalcSize(new GUIContent(string.IsNullOrEmpty(member.ButtonText) ? ObjectNames.NicifyVariableName(member.Name) : member.ButtonText)).x + 8f;
+            }
+
+            var type = member.Field?.FieldType ?? member.Property.PropertyType;
+
+            type = Nullable.GetUnderlyingType(type) ?? type;
+
+            if (type == typeof(bool))
+            {
+                return 20f;
+            }
+
+            if (type == typeof(int) || type == typeof(float) || type == typeof(double) || type == typeof(long) || type == typeof(short) || type == typeof(byte) || type == typeof(uint) || type == typeof(ulong))
+            {
+                return 46f;
+            }
+
+            if (type.IsEnum)
+            {
+                var longest = 0f;
+
+                foreach (var name in Enum.GetNames(type))
+                {
+                    longest = Mathf.Max(longest, EditorStyles.popup.CalcSize(new GUIContent(ObjectNames.NicifyVariableName(name))).x);
+                }
+
+                return Mathf.Max(50f, longest + 4f);
+            }
+
+            flex = true;
+
+            if (type == typeof(string))
+            {
+                return 100f;
+            }
+
+            if (type == typeof(Color))
+            {
+                return 60f;
+            }
+
+            return 200f;
         }
 
         private static bool UsesPropertyDrawer(FieldInfo field)
@@ -913,7 +1200,7 @@ namespace ColorlessCore.Inspector.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(string.IsNullOrEmpty(label) ? "Dictionary" : label, EditorStyles.miniBoldLabel);
-            EditorGUILayout.LabelField(keys.Count + (keys.Count == 1 ? " Element" : " Elements"), EditorStyles.miniLabel, GUILayout.Width(75f));
+            EditorGUILayout.LabelField(keys.Count + (keys.Count == 1 ? " Item" : " Items"), EditorStyles.miniLabel, GUILayout.Width(75f));
 
             if (canEdit && args != null && GUILayout.Button(EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton, GUILayout.Width(RowButtonWidth)))
             {
@@ -1048,7 +1335,7 @@ namespace ColorlessCore.Inspector.Editor
 
         private static void DrawBorder(Rect rect)
         {
-            var color = EditorGUIUtility.isProSkin ? new Color(0.1f, 0.1f, 0.1f) : new Color(0.4f, 0.4f, 0.4f);
+            var color = EditorGUIUtility.isProSkin ? new Color(0.14f, 0.14f, 0.14f) : new Color(0.4f, 0.4f, 0.4f);
 
             EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), color);
             EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), color);

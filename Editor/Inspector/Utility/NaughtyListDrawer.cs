@@ -19,11 +19,12 @@ namespace ColorlessCore.Inspector.Editor
         private const float ElementIndent = 32f;
         private const float TopPadding = 5f;
         private const float InnerPadding = 4f;
-        private const float HeaderPadding = 2f;
+        private const float HeaderPadding = 5f;
+        private const float ItemPadding = 3f;
         private const float BottomPadding = 2f;
 
         private static readonly Color HeaderColor = new Color(0f, 0f, 0f, 0.2f);
-        private static readonly Color BorderColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+        private static readonly Color BorderColor = new Color(0.14f, 0.14f, 0.14f, 1f);
         private static readonly Color EvenRowColor = new Color(1f, 1f, 1f, 0.04f);
         private static readonly Color OddRowColor = new Color(0f, 0f, 0f, 0.09f);
 
@@ -74,7 +75,7 @@ namespace ColorlessCore.Inspector.Editor
 
             for (var i = 0; i < keys.arraySize; i++)
             {
-                height += GetPairHeight(keys, values, i) + Spacing;
+                height += GetPairHeight(keys, values, i) + Spacing + ItemPadding * 2f;
             }
 
             return height + BottomPadding + TopPadding;
@@ -370,7 +371,7 @@ namespace ColorlessCore.Inspector.Editor
 
             countStyle.normal.textColor = count == 0 ? Color.gray : EditorStyles.miniLabel.normal.textColor;
 
-            EditorGUI.LabelField(countRect, count == 0 ? "Empty" : (count == 1 ? "1 Element" : count + " Elements"), countStyle);
+            EditorGUI.LabelField(countRect, count == 0 ? "Empty" : (count == 1 ? "1 Item" : count + " Items"), countStyle);
 
             if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton))
             {
@@ -397,12 +398,12 @@ namespace ColorlessCore.Inspector.Editor
             for (var i = 0; i < count; i++)
             {
                 var height = GetPairHeight(keys, values, i);
-                var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing);
+                var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing + ItemPadding * 2f);
                 var contentX = rect.x + 8f;
                 var contentWidth = rect.width - 8f - ButtonWidth - 8f;
-                var keyRect = new Rect(contentX, y, keyWidth - 2f, height);
-                var valueRect = new Rect(contentX + keyWidth + 2f, y, contentWidth - keyWidth - 2f, height);
-                var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + (height - 20f) * 0.5f, ButtonWidth, 20f);
+                var keyRect = new Rect(contentX, y + ItemPadding, keyWidth - 2f, height);
+                var valueRect = new Rect(contentX + keyWidth + 2f, y + ItemPadding, contentWidth - keyWidth - 2f, height);
+                var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + ItemPadding + (height - 20f) * 0.5f, ButtonWidth, 20f);
 
                 if (Event.current.type == EventType.Repaint)
                 {
@@ -419,7 +420,7 @@ namespace ColorlessCore.Inspector.Editor
 
                 if (cull && (rowRect.yMax < visible.yMin || rowRect.yMin > visible.yMax))
                 {
-                    y += height + Spacing;
+                    y += height + Spacing + ItemPadding * 2f;
 
                     continue;
                 }
@@ -439,7 +440,7 @@ namespace ColorlessCore.Inspector.Editor
                     return;
                 }
 
-                y += height + Spacing;
+                y += height + Spacing + ItemPadding * 2f;
             }
         }
 
@@ -594,7 +595,7 @@ namespace ColorlessCore.Inspector.Editor
 
             for (var i = 0; i < property.arraySize; i++)
             {
-                height += GetElementHeight(property.GetArrayElementAtIndex(i), settings == null || !settings.ShowFoldout) + Spacing;
+                height += GetElementHeight(property.GetArrayElementAtIndex(i),                 settings == null || !settings.ShowFoldout) + Spacing + ItemPadding * 2f;
             }
 
             return height + BottomPadding;
@@ -1282,7 +1283,7 @@ namespace ColorlessCore.Inspector.Editor
                 countStyle.normal.textColor = Color.gray;
             }
 
-            EditorGUI.LabelField(countRect, property.arraySize == 0 ? "Empty" : (property.arraySize == 1 ? "1 Element" : property.arraySize + " Elements"), countStyle);
+            EditorGUI.LabelField(countRect, property.arraySize == 0 ? "Empty" : (property.arraySize == 1 ? "1 Item" : property.arraySize + " Items"), countStyle);
 
             if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton))
             {
@@ -1313,19 +1314,19 @@ namespace ColorlessCore.Inspector.Editor
             {
                 var element = property.GetArrayElementAtIndex(i);
                 var height = GetElementHeight(element, flat);
-                var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing);
+                var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing + ItemPadding * 2f);
 
                 if (cull && (rowRect.yMax < visible.yMin || rowRect.yMin > visible.yMax))
                 {
                     elementRects.Add(rowRect);
-                    y += height + Spacing;
+                    y += height + Spacing + ItemPadding * 2f;
 
                     continue;
                 }
 
-                var fieldRect = new Rect(rect.x + ElementIndent, y, rect.width - ElementIndent - ButtonWidth - 4f, height);
-                var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + (height - 20f) * 0.5f, ButtonWidth, 20f);
-                var handleRect = new Rect(rect.x + 6f, y, 16f, height);
+                var fieldRect = new Rect(rect.x + ElementIndent, y + ItemPadding, rect.width - ElementIndent - ButtonWidth - 4f, height);
+                var removeRect = new Rect(rect.xMax - ButtonWidth - 2f, y + ItemPadding + (height - 20f) * 0.5f, ButtonWidth, 20f);
+                var handleRect = new Rect(rect.x + 6f, y + ItemPadding, 16f, height);
 
                 elementRects.Add(rowRect);
 
@@ -1384,7 +1385,7 @@ namespace ColorlessCore.Inspector.Editor
                     return;
                 }
 
-                y += height + Spacing;
+                y += height + Spacing + ItemPadding * 2f;
             }
 
             HandleDrag(property, key, controlId, elementRects);
