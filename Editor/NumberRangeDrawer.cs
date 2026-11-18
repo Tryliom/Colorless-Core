@@ -31,7 +31,10 @@ public class NumberRangeDrawer : PropertyDrawer
 		var labelRect = new Rect(position.x, position.y, labelWidth, position.height);
 
 		EditorGUI.LabelField(labelRect, label);
-		position = new Rect(position.x + labelWidth, position.y, position.width - labelWidth, position.height);
+		// Unity starts the field after the label plus a 2px prefix padding
+		const float prefixPadding = 2f;
+
+		position = new Rect(position.x + labelWidth + prefixPadding, position.y, position.width - labelWidth - prefixPadding, position.height);
 		EditorGUI.indentLevel = 0;
 
 		var typeForced = settings != null && settings.HasType;

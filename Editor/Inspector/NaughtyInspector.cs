@@ -93,7 +93,7 @@ namespace ColorlessCore.Inspector.Editor
 
         private void DrawInspector()
         {
-            NaughtyListDrawer.ClearHeightCache();
+            NaughtyListDrawer.BeginInspector(target);
             GetSerializedProperties(ref _serializedProperties);
 
             var anyNaughtyAttribute = _serializedProperties.Any(p => PropertyUtility.GetAttribute<INaughtyAttribute>(p) != null || IsSerializeReference(p))

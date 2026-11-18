@@ -44,5 +44,8 @@ namespace ColorlessCore.Inspector
 	{
 		/// <summary>Key column width: from 0 to 1 it is a ratio of the row width, above 1 it is in pixels.</summary>
 		public float KeyWidth = 125f;
+
+		/// <summary>Number of rows per page. Above 0 it enables the pagination buttons in the header. 0 disables pagination.</summary>
+		public int PageSize = 0;
 	}
 }

@@ -32,14 +32,17 @@ namespace ColorlessCore.Inspector.Editor
         private static int _dragIndex;
         private static int _dragTarget;
 
-        private static GUIStyle HandleStyle => new GUIStyle(EditorStyles.label)
+        private static GUIStyle _handleStyle;
+        private static GUIStyle _removeStyle;
+
+        private static GUIStyle HandleStyle => _handleStyle ??= new GUIStyle(EditorStyles.label)
         {
             alignment = TextAnchor.MiddleCenter,
             fontStyle = FontStyle.Bold,
             normal = { textColor = Color.gray }
         };
 
-        private static GUIStyle RemoveStyle => new GUIStyle(EditorStyles.iconButton)
+        private static GUIStyle RemoveStyle => _removeStyle ??= new GUIStyle(EditorStyles.iconButton)
         {
             alignment = TextAnchor.MiddleCenter,
             padding = new RectOffset(0, 0, 0, 0)
@@ -73,12 +76,112 @@ namespace ColorlessCore.Inspector.Editor
 
             height += InnerPadding;
 
-            for (var i = 0; i < keys.arraySize; i++)
+            var indices = GetVisibleIndices(property, keys);
+
+            GetPageRange(property, indices.Count, out var start, out var end, out _, out _);
+
+            for (var idx = start; idx < end; idx++)
             {
-                height += GetPairHeight(keys, values, i) + Spacing + ItemPadding * 2f;
+                height += GetPairHeight(keys, values, indices[idx]) + Spacing + ItemPadding * 2f;
             }
 
             return height + BottomPadding + TopPadding;
+        }
+
+        private static readonly Dictionary<(int Object, string Path), string> DictionarySearch = new();
+        private static readonly Dictionary<(int Object, string Path), List<int>> IndicesCache = new();
+        private static GUIStyle _pageButtonStyle;
+        private static GUIStyle _placeholderStyle;
+
+        private static string GetSearch(SerializedProperty property)
+        {
+            return DictionarySearch.TryGetValue((property.serializedObject.GetHashCode(), property.propertyPath), out var text) ? text : "";
+        }
+
+        private static void SetSearch(SerializedProperty property, string text)
+        {
+            DictionarySearch[(property.serializedObject.GetHashCode(), property.propertyPath)] = text ?? "";
+            DictionaryPages[(property.serializedObject.GetHashCode(), property.propertyPath)] = 0;
+            ClearHeightCache();
+            GUI.changed = true;
+        }
+
+        private static string GetKeyText(SerializedProperty key)
+        {
+            switch (key.propertyType)
+            {
+                case SerializedPropertyType.Enum:
+                    return key.enumValueIndex >= 0 && key.enumValueIndex < key.enumDisplayNames.Length ? key.enumDisplayNames[key.enumValueIndex] : "";
+                case SerializedPropertyType.String:
+                    return key.stringValue;
+                case SerializedPropertyType.Integer:
+                    return key.intValue.ToString();
+                case SerializedPropertyType.Float:
+                    return key.floatValue.ToString();
+                case SerializedPropertyType.ObjectReference:
+                    return key.objectReferenceValue != null ? key.objectReferenceValue.name : "";
+                default:
+                    return key.displayName;
+            }
+        }
+
+        // Absolute indices of the entries matching the current search (all entries when the search is empty)
+        private static List<int> GetVisibleIndices(SerializedProperty property, SerializedProperty keys)
+        {
+            var cacheKey = (property.serializedObject.GetHashCode(), property.propertyPath);
+
+            if (IndicesCache.TryGetValue(cacheKey, out var cached) && cached.Count > 0 && cached[0] == -2 - keys.arraySize)
+            {
+                return cached.GetRange(1, cached.Count - 1);
+            }
+
+            var search = GetSearch(property);
+            var result = new List<int> { -2 - keys.arraySize };
+
+            for (var i = 0; i < keys.arraySize; i++)
+            {
+                if (search.Length == 0 || GetKeyText(keys.GetArrayElementAtIndex(i)).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    result.Add(i);
+                }
+            }
+
+            IndicesCache[cacheKey] = result;
+
+            return result.GetRange(1, result.Count - 1);
+        }
+
+        private static readonly Dictionary<(int Object, string Path), int> DictionaryPages = new();
+
+        // Returns the visible index range of the current page, clamping the stored page to the item count
+        private static void GetPageRange(SerializedProperty property, int count, out int start, out int end, out int page, out int pageCount)
+        {
+            var pageSize = PropertyUtility.GetAttribute<DictionaryDrawerSettingsAttribute>(property)?.PageSize ?? 0;
+
+            if (pageSize <= 0)
+            {
+                start = 0;
+                end = count;
+                page = 0;
+                pageCount = 1;
+
+                return;
+            }
+
+            var key = (property.serializedObject.GetHashCode(), property.propertyPath);
+
+            pageCount = Mathf.Max(1, Mathf.CeilToInt(count / (float) pageSize));
+            DictionaryPages.TryGetValue(key, out page);
+            page = Mathf.Clamp(page, 0, pageCount - 1);
+            start = page * pageSize;
+            end = Mathf.Min(count, start + pageSize);
+        }
+
+        private static void SetPage(SerializedProperty property, int page)
+        {
+            DictionaryPages[(property.serializedObject.GetHashCode(), property.propertyPath)] = page;
+            ClearHeightCache();
+            GUI.changed = true;
         }
 
         // Adds an entry with a key that is not used yet, otherwise the dictionary would collapse the duplicate
@@ -362,12 +465,18 @@ namespace ColorlessCore.Inspector.Editor
                 return new Rect(-100000f, -100000f, 200000f, 200000f);
             }
 
-            return (Rect) VisibleRectProperty.GetValue(null);
+            var rect = (Rect) VisibleRectProperty.GetValue(null);
+
+            rect.yMin -= 60f;
+            rect.yMax += 60f;
+
+            return rect;
         }
 
         private static GUIStyle _countStyle;
 
         private const float CountWidth = 110f;
+        private const float SearchWidth = 110f;
         private const float MinColumnWidth = 40f;
 
         private static float GetKeyWidth(SerializedProperty property, float contentWidth)
@@ -394,10 +503,19 @@ namespace ColorlessCore.Inspector.Editor
             }
 
             var count = keys.arraySize;
+            var indices = GetVisibleIndices(property, keys);
+
+            GetPageRange(property, indices.Count, out var pageStart, out var pageEnd, out var page, out var pageCount);
+
+            var paged = (PropertyUtility.GetAttribute<DictionaryDrawerSettingsAttribute>(property)?.PageSize ?? 0) > 0;
             var headerBackground = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
             var header = new Rect(rect.x, rect.y + HeaderPadding, rect.width, HeaderHeight);
             var addRect = new Rect(header.xMax - ButtonWidth, header.y + (header.height - 18f) * 0.5f, ButtonWidth, 18f);
-            var countRect = new Rect(addRect.x - CountWidth - 4f, header.y, CountWidth, header.height);
+            var nextRect = new Rect(addRect.x - ButtonWidth, addRect.y, ButtonWidth, 18f);
+            var prevRect = new Rect(nextRect.x - ButtonWidth, addRect.y, ButtonWidth, 18f);
+            var searchRight = paged ? prevRect.x - 2f : addRect.x - 2f;
+            var searchRect = new Rect(searchRight - SearchWidth, addRect.y + 1f, SearchWidth, 16f);
+            var countRect = new Rect(searchRect.x - CountWidth - 4f, header.y, CountWidth, header.height);
             var labelRect = new Rect(header.x + 18f, header.y, countRect.x - header.x - 18f, header.height);
 
             if (Event.current.type == EventType.Repaint)
@@ -424,9 +542,76 @@ namespace ColorlessCore.Inspector.Editor
 
             EditorGUI.LabelField(countRect, count == 0 ? "Empty" : (count == 1 ? "1 Item" : count + " Items"), countStyle);
 
+            _pageButtonStyle ??= new GUIStyle(EditorStyles.iconButton)
+            {
+                alignment = TextAnchor.MiddleCenter, padding = new RectOffset(0, 0, 0, 2), fontStyle = FontStyle.Bold
+            };
+            _placeholderStyle ??= new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleLeft, padding = new RectOffset(18, 0, 0, 0) };
+
+            var searchName = "DictSearch_" + property.propertyPath;
+            var search = GetSearch(property);
+
+            GUI.SetNextControlName(searchName);
+
+            var newSearch = GUI.TextField(searchRect, search, EditorStyles.toolbarSearchField);
+
+            if (search.Length == 0 && GUI.GetNameOfFocusedControl() != searchName && Event.current.type == EventType.Repaint)
+            {
+                var placeholderColor = _placeholderStyle.normal.textColor;
+
+                _placeholderStyle.normal.textColor = Color.gray;
+                _placeholderStyle.Draw(searchRect, "Search..", false, false, false, false);
+                _placeholderStyle.normal.textColor = placeholderColor;
+            }
+
+            if (newSearch != search)
+            {
+                SetSearch(property, newSearch);
+
+                return;
+            }
+
+            if (paged)
+            {
+                var newPage = page;
+
+                using (new EditorGUI.DisabledScope(page <= 0))
+                {
+                    if (GUI.Button(prevRect, new GUIContent("<", $"Page {page + 1}/{pageCount}"), _pageButtonStyle))
+                    {
+                        newPage = page - 1;
+                    }
+                }
+
+                using (new EditorGUI.DisabledScope(page >= pageCount - 1))
+                {
+                    if (GUI.Button(nextRect, new GUIContent(">", $"Page {page + 1}/{pageCount}"), _pageButtonStyle))
+                    {
+                        newPage = page + 1;
+                    }
+                }
+
+                if (newPage != page)
+                {
+                    SetPage(property, newPage);
+
+                    return;
+                }
+            }
+
             if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.iconButton))
             {
                 AddEntry(keys, values);
+
+                if (search.Length > 0)
+                {
+                    SetSearch(property, "");
+                }
+
+                if (paged)
+                {
+                    SetPage(property, Mathf.Max(0, (keys.arraySize - 1) / PropertyUtility.GetAttribute<DictionaryDrawerSettingsAttribute>(property).PageSize));
+                }
 
                 return;
             }
@@ -441,13 +626,15 @@ namespace ColorlessCore.Inspector.Editor
             var eventType = Event.current.type;
             var keyWidth = GetKeyWidth(property, rect.width - 8f - ButtonWidth - 8f);
 
-            // Skip off-screen rows only when no control is focused, so control ids stay consistent for editing.
-            var cull = (eventType == EventType.Repaint || eventType == EventType.Layout)
-                       && GUIUtility.keyboardControl == 0
+            // Skip off-screen rows, except while dragging (hot control), so control ids stay consistent.
+            var cull = (eventType == EventType.Repaint || eventType == EventType.Layout
+                        || eventType == EventType.ScrollWheel || eventType == EventType.MouseMove
+                        || eventType == EventType.Used || eventType == EventType.Ignore)
                        && GUIUtility.hotControl == 0;
 
-            for (var i = 0; i < count; i++)
+            for (var idx = pageStart; idx < pageEnd; idx++)
             {
+                var i = indices[idx];
                 var height = GetPairHeight(keys, values, i);
                 var rowRect = new Rect(rect.x + 1f, y - Spacing * 0.5f, rect.width - 2f, height + Spacing + ItemPadding * 2f);
                 var contentX = rect.x + 8f;
@@ -458,7 +645,7 @@ namespace ColorlessCore.Inspector.Editor
 
                 if (Event.current.type == EventType.Repaint)
                 {
-                    EditorGUI.DrawRect(rowRect, i % 2 == 0 ? EvenRowColor : OddRowColor);
+                    EditorGUI.DrawRect(rowRect, idx % 2 == 0 ? EvenRowColor : OddRowColor);
                 }
 
                 if (Event.current.type == EventType.ContextClick && rowRect.Contains(Event.current.mousePosition))
@@ -500,12 +687,57 @@ namespace ColorlessCore.Inspector.Editor
         /// <summary>
         /// Clears the per-event height cache. Must be called at the start of every inspector OnGUI.
         /// </summary>
+        private static bool _invalidateCaches = true;
+        private static int _lastTargetId;
+        private static int _lastDirtyCount = -1;
+
+        /// <summary>
+        /// Clears the caches only when the layout may have changed (data edited, user interaction, play mode),
+        /// so passive events like repaints, mouse moves and scrolling reuse the computed heights.
+        /// </summary>
+        public static void BeginInspector(UnityEngine.Object target)
+        {
+            var type = Event.current.type;
+            var targetId = target != null ? target.GetHashCode() : 0;
+            var dirtyCount = target != null ? EditorUtility.GetDirtyCount(target) : 0;
+            var changed = _invalidateCaches || targetId != _lastTargetId || dirtyCount != _lastDirtyCount
+                          || EditorApplication.isPlaying && type == EventType.Layout;
+
+            _lastTargetId = targetId;
+            _lastDirtyCount = dirtyCount;
+            _invalidateCaches = false;
+
+            if (changed)
+            {
+                ClearHeightCache();
+            }
+
+            switch (type)
+            {
+                case EventType.Layout:
+                case EventType.Repaint:
+                case EventType.MouseMove:
+                case EventType.ScrollWheel:
+                case EventType.Used:
+                case EventType.Ignore:
+                case EventType.MouseEnterWindow:
+                case EventType.MouseLeaveWindow:
+                    break;
+                default:
+                    _invalidateCaches = true;
+
+                    break;
+            }
+        }
+
         public static void ClearHeightCache()
         {
             HeightCache.Clear();
             RunsCache.Clear();
+            WidestLabelCache.Clear();
             BodyCache.Clear();
             PairHeightCache.Clear();
+            IndicesCache.Clear();
             ValueChildrenCache.Clear();
             PropertyUtility.ClearVisibilityCache();
         }
@@ -1204,7 +1436,23 @@ namespace ColorlessCore.Inspector.Editor
             _labelWidthOverride = previousOverride;
         }
 
+        private static readonly Dictionary<List<SerializedProperty>, float> WidestLabelCache = new();
+
         private static float GetWidestLabel(List<SerializedProperty> children)
+        {
+            if (WidestLabelCache.TryGetValue(children, out var cached))
+            {
+                return cached;
+            }
+
+            var widest = ComputeWidestLabel(children);
+
+            WidestLabelCache[children] = widest;
+
+            return widest;
+        }
+
+        private static float ComputeWidestLabel(List<SerializedProperty> children)
         {
             var widest = 0f;
 
@@ -1476,7 +1724,9 @@ namespace ColorlessCore.Inspector.Editor
             var elementRects = new List<Rect>();
             var visible = GetVisibleRect();
             var eventType = Event.current.type;
-            var cull = (eventType == EventType.Repaint || eventType == EventType.Layout)
+            var cull = (eventType == EventType.Repaint || eventType == EventType.Layout
+                        || eventType == EventType.ScrollWheel || eventType == EventType.MouseMove
+                        || eventType == EventType.Used || eventType == EventType.Ignore)
                        && GUIUtility.keyboardControl == 0
                        && GUIUtility.hotControl == 0
                        && !ContainsTable(elementType, 0);
