@@ -619,6 +619,9 @@ namespace ColorlessCore.Inspector.Editor
                     TableAreaRects[areaKey] = rect;
                 }
 
+                // Flush pending edits of previously drawn fields, otherwise the Update below would discard them
+                property.serializedObject.ApplyModifiedProperties();
+
                 GUILayout.BeginArea(rect);
                 GUILayout.BeginVertical(GUILayout.ExpandHeight(false));
                 NaughtyTableDrawer.Draw(tableList, property.serializedObject.targetObject, ObjectNames.NicifyVariableName(property.name),

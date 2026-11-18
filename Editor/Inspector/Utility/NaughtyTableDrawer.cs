@@ -25,6 +25,8 @@ namespace ColorlessCore.Inspector.Editor
         private class Member
         {
             public string Name;
+            public string CustomLabel;
+            public string Title => string.IsNullOrEmpty(CustomLabel) ? ObjectNames.NicifyVariableName(Name) : CustomLabel;
             public int Order;
             public float Width;
             public bool HideLabel;
@@ -196,9 +198,16 @@ namespace ColorlessCore.Inspector.Editor
 
             if (Event.current.type == EventType.Repaint)
             {
-                var background = new Rect(rect.x - 2f, rect.y, rect.width + 4f, rect.height);
+                var isOpen = _listProperty != null ? _listProperty.isExpanded : _fallbackExpanded;
+                var background = isOpen ? new Rect(rect.x - 2f, rect.y, rect.width + 4f, rect.height) : rect;
 
                 EditorGUI.DrawRect(background, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+            }
+
+            if (Event.current.type == EventType.ContextClick && rect.Contains(Event.current.mousePosition))
+            {
+                ShowContextMenu(list, -1, canEdit);
+                Event.current.Use();
             }
 
             var addWidth = canEdit ? RowButtonWidth + 4f : 0f;
@@ -236,6 +245,124 @@ namespace ColorlessCore.Inspector.Editor
             }
 
             return expanded;
+        }
+
+        private static Type _clipboardType;
+        private static string _clipboardJson;
+
+        private static void Modify(Action action)
+        {
+            Mark();
+            action();
+            EditorUtility.SetDirty(_owner);
+            _listProperty?.serializedObject.Update();
+            RepaintAll();
+        }
+
+        private static object CloneElement(object element)
+        {
+            if (element == null)
+            {
+                return null;
+            }
+
+            var type = element.GetType();
+
+            if (type.IsValueType || type == typeof(string))
+            {
+                return element;
+            }
+
+            var copy = CreateInstance(type);
+
+            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(element), copy);
+
+            return copy;
+        }
+
+        private static void ShowContextMenu(IList list, int index, bool canEdit)
+        {
+            var menu = new GenericMenu();
+            var elementType = GetElementType(list);
+
+            if (index >= 0 && list[index] != null)
+            {
+                var element = list[index];
+                var type = element.GetType();
+                var json = type.IsValueType || type == typeof(string) ? null : JsonUtility.ToJson(element);
+
+                menu.AddItem(new GUIContent("Copy"), false, () =>
+                {
+                    _clipboardType = type;
+                    _clipboardJson = json;
+                });
+            }
+
+            var canPaste = canEdit && _clipboardType != null && elementType.IsAssignableFrom(_clipboardType);
+
+            if (canPaste && index >= 0)
+            {
+                menu.AddItem(new GUIContent("Paste"), false, () => Modify(() =>
+                {
+                    var pasted = CreateInstance(_clipboardType);
+
+                    JsonUtility.FromJsonOverwrite(_clipboardJson ?? "{}", pasted);
+                    list[index] = pasted;
+                }));
+            }
+            else if (index >= 0)
+            {
+                menu.AddDisabledItem(new GUIContent("Paste"));
+            }
+
+            if (canPaste && index < 0)
+            {
+                menu.AddItem(new GUIContent("Paste as new element"), false, () => Modify(() =>
+                {
+                    var pasted = CreateInstance(_clipboardType);
+
+                    JsonUtility.FromJsonOverwrite(_clipboardJson ?? "{}", pasted);
+                    list.Add(pasted);
+                }));
+            }
+
+            if (canEdit && index >= 0)
+            {
+                menu.AddSeparator(string.Empty);
+                menu.AddItem(new GUIContent("Duplicate"), false, () => Modify(() => list.Insert(index + 1, CloneElement(list[index]))));
+                menu.AddItem(new GUIContent("Delete"), false, () => Modify(() => list.RemoveAt(index)));
+
+                if (index > 0)
+                {
+                    menu.AddItem(new GUIContent("Move up"), false, () => Modify(() => Swap(list, index, index - 1)));
+                }
+                else
+                {
+                    menu.AddDisabledItem(new GUIContent("Move up"));
+                }
+
+                if (index < list.Count - 1)
+                {
+                    menu.AddItem(new GUIContent("Move down"), false, () => Modify(() => Swap(list, index, index + 1)));
+                }
+                else
+                {
+                    menu.AddDisabledItem(new GUIContent("Move down"));
+                }
+            }
+
+            if (canEdit)
+            {
+                menu.AddSeparator(string.Empty);
+                menu.AddItem(new GUIContent("Clear"), false, () => Modify(list.Clear));
+            }
+
+            menu.ShowAsContext();
+        }
+
+        private static void Swap(IList list, int a, int b)
+        {
+            (list[a], list[b]) = (list[b], list[a]);
         }
 
         private static GUIStyle _headerStyle;
@@ -346,9 +473,16 @@ namespace ColorlessCore.Inspector.Editor
             GUILayout.Space(RowPadding);
             EditorGUILayout.EndVertical();
 
+            var rowRect = GUILayoutUtility.GetLastRect();
+
+            if (Event.current.type == EventType.ContextClick && rowRect.Contains(Event.current.mousePosition))
+            {
+                ShowContextMenu(list, index, canEdit);
+                Event.current.Use();
+            }
+
             if (canEdit)
             {
-                var rowRect = GUILayoutUtility.GetLastRect();
                 var removeStyle = new GUIStyle(EditorStyles.iconButton)
                 {
                     alignment = TextAnchor.MiddleCenter,
@@ -436,11 +570,24 @@ namespace ColorlessCore.Inspector.Editor
                 labelWidth = NestedLabelWidth;
             }
 
-            var label = showLabel ? ObjectNames.NicifyVariableName(member.Name) : string.Empty;
+            var memberInfo = member.Method ?? (MemberInfo)member.Field ?? member.Property;
+
+            // Conditions are evaluated against the table element, not the inspected object.
+            if (!ButtonUtility.IsVisible(element, memberInfo))
+            {
+                return false;
+            }
+
+            if (!ButtonUtility.IsEnabled(element, memberInfo))
+            {
+                readOnly = true;
+            }
+
+            var label = showLabel ? member.Title : string.Empty;
 
             if (member.Method != null)
             {
-                var text = string.IsNullOrEmpty(member.ButtonText) ? ObjectNames.NicifyVariableName(member.Name) : member.ButtonText;
+                var text = string.IsNullOrEmpty(member.ButtonText) ? member.Title : member.ButtonText;
 
                 if (GUILayout.Button(text))
                 {
@@ -628,10 +775,18 @@ namespace ColorlessCore.Inspector.Editor
 
             foreach (var member in members)
             {
-                var value = member.Field != null ? member.Field.GetValue(obj) : member.Property.GetValue(obj);
-                var memberLabel = member.HideLabel ? string.Empty : ObjectNames.NicifyVariableName(member.Name);
+                var memberInfo = member.Field ?? (MemberInfo)member.Property;
 
-                if (!DrawValue(ref value, memberLabel, readOnly || member.ReadOnly, depth + 1, member.Field?.FieldType ?? member.Property.PropertyType, nestedLabelWidth))
+                if (!ButtonUtility.IsVisible(obj, memberInfo))
+                {
+                    continue;
+                }
+
+                var value = member.Field != null ? member.Field.GetValue(obj) : member.Property.GetValue(obj);
+                var memberLabel = member.HideLabel ? string.Empty : member.Title;
+                var enabled = ButtonUtility.IsEnabled(obj, memberInfo);
+
+                if (!DrawValue(ref value, memberLabel, readOnly || member.ReadOnly || !enabled, depth + 1, member.Field?.FieldType ?? member.Property.PropertyType, nestedLabelWidth))
                 {
                     continue;
                 }
@@ -866,7 +1021,7 @@ namespace ColorlessCore.Inspector.Editor
                 return "v:" + verticalGroup.Name;
             }
 
-            header = member.Method != null ? string.Empty : ObjectNames.NicifyVariableName(member.Name);
+            header = member.Method != null ? string.Empty : member.Title;
 
             return "m:" + member.Name;
         }
@@ -940,6 +1095,7 @@ namespace ColorlessCore.Inspector.Editor
             return new Member
             {
                 Name = name,
+                CustomLabel = info.GetCustomAttribute<LabelAttribute>(true)?.Label,
                 Field = info as FieldInfo,
                 Property = info as PropertyInfo,
                 Order = info.GetCustomAttribute<PropertyOrderAttribute>(true)?.Order ?? 0,
@@ -1082,7 +1238,7 @@ namespace ColorlessCore.Inspector.Editor
         {
             if (member.LabelWidth < 0f)
             {
-                member.LabelWidth = EditorStyles.label.CalcSize(new GUIContent(ObjectNames.NicifyVariableName(member.Name))).x + 14f;
+                member.LabelWidth = EditorStyles.label.CalcSize(new GUIContent(member.Title)).x + 14f;
             }
 
             return member.LabelWidth;

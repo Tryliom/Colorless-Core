@@ -746,6 +746,8 @@ namespace ColorlessCore.Inspector.Editor
             else if (item.Table != null && property.isArray && property.propertyType != SerializedPropertyType.String
                 && PropertyUtility.GetTargetObjectOfProperty(property) is System.Collections.IList tableList)
             {
+                // Flush pending edits of previously drawn fields, otherwise the Update below would discard them
+                serializedObject.ApplyModifiedProperties();
                 NaughtyTableDrawer.Draw(tableList, target, ObjectNames.NicifyVariableName(property.name),                 item.Table.IsReadOnly, null, property);
                 serializedObject.Update();
             }

@@ -6,7 +6,7 @@ namespace ColorlessCore.Inspector.Editor
 {
     public static class ButtonUtility
     {
-        public static bool IsEnabled(Object target, MemberInfo method)
+        public static bool IsEnabled(object target, MemberInfo method)
         {
             EnableIfAttributeBase enableIfAttribute = method.GetCustomAttribute<EnableIfAttributeBase>();
             if (enableIfAttribute == null)
@@ -23,13 +23,13 @@ namespace ColorlessCore.Inspector.Editor
             else
             {
                 string message = enableIfAttribute.GetType().Name + " needs a valid boolean condition field, property or method name to work";
-                Debug.LogWarning(message, target);
+                Debug.LogWarning(message, target as Object);
 
                 return false;
             }
         }
 
-        public static bool IsVisible(Object target, MemberInfo method)
+        public static bool IsVisible(object target, MemberInfo method)
         {
             ShowIfAttributeBase showIfAttribute = method.GetCustomAttribute<ShowIfAttributeBase>();
             if (showIfAttribute == null)
@@ -62,7 +62,7 @@ namespace ColorlessCore.Inspector.Editor
             else
             {
                 string message = showIfAttribute.GetType().Name + " needs a valid boolean condition field, property or method name to work";
-                Debug.LogWarning(message, target);
+                Debug.LogWarning(message, target as Object);
 
                 return false;
             }
