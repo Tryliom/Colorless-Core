@@ -13,20 +13,20 @@ namespace ColorlessCore.Inspector.Editor
     /// </summary>
     public static class NaughtyListDrawer
     {
-        private const float HeaderHeight = 22f;
-        private const float ButtonWidth = 22f;
-        private const float Spacing = 2f;
-        private const float ElementIndent = 32f;
-        private const float TopPadding = 5f;
-        private const float InnerPadding = 4f;
-        private const float HeaderPadding = 5f;
-        private const float ItemPadding = 3f;
-        private const float BottomPadding = 2f;
+        private const float HeaderHeight = InspectorStyle.ListHeaderHeight;
+        private const float ButtonWidth = InspectorStyle.ListButtonWidth;
+        private const float Spacing = InspectorStyle.ListSpacing;
+        private const float ElementIndent = InspectorStyle.ListElementIndent;
+        private const float TopPadding = InspectorStyle.ListTopPadding;
+        private const float InnerPadding = InspectorStyle.ListInnerPadding;
+        private const float HeaderPadding = InspectorStyle.ListHeaderPadding;
+        private const float ItemPadding = InspectorStyle.ListItemPadding;
+        private const float BottomPadding = InspectorStyle.ListBottomPadding;
 
-        private static readonly Color HeaderColor = new Color(0f, 0f, 0f, 0.2f);
-        private static readonly Color BorderColor = new Color(0.14f, 0.14f, 0.14f, 1f);
-        private static readonly Color EvenRowColor = new Color(1f, 1f, 1f, 0.04f);
-        private static readonly Color OddRowColor = new Color(0f, 0f, 0f, 0.09f);
+        private static Color HeaderColor => InspectorStyle.ListHeaderTint;
+        private static Color BorderColor => InspectorStyle.Border;
+        private static Color EvenRowColor => InspectorStyle.EvenRow;
+        private static Color OddRowColor => InspectorStyle.OddRow;
 
         private static string _dragKey;
         private static int _dragIndex;
@@ -39,7 +39,7 @@ namespace ColorlessCore.Inspector.Editor
         {
             alignment = TextAnchor.MiddleCenter,
             fontStyle = FontStyle.Bold,
-            normal = { textColor = Color.gray }
+            normal = { textColor = InspectorStyle.CountLabel }
         };
 
         private static GUIStyle RemoveStyle => _removeStyle ??= new GUIStyle(EditorStyles.iconButton)
@@ -475,9 +475,9 @@ namespace ColorlessCore.Inspector.Editor
 
         private static GUIStyle _countStyle;
 
-        private const float CountWidth = 110f;
-        private const float SearchWidth = 110f;
-        private const float MinColumnWidth = 40f;
+        private const float CountWidth = InspectorStyle.ListCountWidth;
+        private const float SearchWidth = InspectorStyle.ListSearchWidth;
+        private const float MinColumnWidth = InspectorStyle.DictionaryMinColumnWidth;
 
         private static float GetKeyWidth(SerializedProperty property, float contentWidth)
         {
@@ -520,7 +520,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (Event.current.type == EventType.Repaint)
             {
-                EditorGUI.DrawRect(headerBackground, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                EditorGUI.DrawRect(headerBackground, InspectorStyle.HeaderBackground);
                 DrawBorder(rect);
             }
 
@@ -538,7 +538,7 @@ namespace ColorlessCore.Inspector.Editor
 
             var countStyle = _countStyle;
 
-            countStyle.normal.textColor = count == 0 ? Color.gray : EditorStyles.miniLabel.normal.textColor;
+            countStyle.normal.textColor = count == 0 ? InspectorStyle.CountLabel : EditorStyles.miniLabel.normal.textColor;
 
             EditorGUI.LabelField(countRect, count == 0 ? "Empty" : (count == 1 ? "1 Item" : count + " Items"), countStyle);
 
@@ -559,7 +559,7 @@ namespace ColorlessCore.Inspector.Editor
             {
                 var placeholderColor = _placeholderStyle.normal.textColor;
 
-                _placeholderStyle.normal.textColor = Color.gray;
+                _placeholderStyle.normal.textColor = InspectorStyle.SearchPlaceholder;
                 _placeholderStyle.Draw(searchRect, "Search..", false, false, false, false);
                 _placeholderStyle.normal.textColor = placeholderColor;
             }
@@ -1293,10 +1293,10 @@ namespace ColorlessCore.Inspector.Editor
         }
 
         private const float BoxHeaderHeight = HeaderHeight + HeaderPadding * 2f;
-        private const float BoxPadding = 3f;
-        private const float ContainerIndent = 14f;
-        private const float BodyIndentLeft = 16f;
-        private const float BodyIndentRight = 4f;
+        private const float BoxPadding = InspectorStyle.ListBoxPadding;
+        private const float ContainerIndent = InspectorStyle.ListContainerIndent;
+        private const float BodyIndentLeft = InspectorStyle.FoldoutBodyIndentLeft;
+        private const float BodyIndentRight = InspectorStyle.FoldoutBodyIndentRight;
 
         private static SerializedProperty GetToggle(List<SerializedProperty> children)
         {
@@ -1588,10 +1588,9 @@ namespace ColorlessCore.Inspector.Editor
                 return;
             }
 
-            var isPro = EditorGUIUtility.isProSkin;
             var header = new Rect(rect.x, y, rect.width, BoxHeaderHeight);
-            var headerColor = isPro ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f);
-            var contentColor = isPro ? new Color(0.19f, 0.19f, 0.19f) : new Color(0.78f, 0.78f, 0.78f);
+            var headerColor = InspectorStyle.HeaderBackground;
+            var contentColor = InspectorStyle.ContentBackground;
 
             EditorGUI.DrawRect(header, headerColor);
 
@@ -1654,13 +1653,12 @@ namespace ColorlessCore.Inspector.Editor
 
             if (!flat)
             {
-                var isPro = EditorGUIUtility.isProSkin;
                 rect.y += TopPadding;
                 rect.height -= TopPadding;
 
                 var header = new Rect(rect.x, rect.y, rect.width, HeaderHeight + HeaderPadding * 2f);
 
-                EditorGUI.DrawRect(header, isPro ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                EditorGUI.DrawRect(header, InspectorStyle.HeaderBackground);
 
                 var line = new Rect(header.x + 18f, header.y + HeaderPadding + (HeaderHeight - EditorGUIUtility.singleLineHeight) * 0.5f, header.width - 18f, EditorGUIUtility.singleLineHeight);
 
@@ -1675,7 +1673,7 @@ namespace ColorlessCore.Inspector.Editor
 
                 var contentHeight = BoxPadding * 2f + GetRunsHeight(property);
 
-                EditorGUI.DrawRect(new Rect(rect.x, header.yMax, rect.width, contentHeight), isPro ? new Color(0.19f, 0.19f, 0.19f) : new Color(0.78f, 0.78f, 0.78f));
+                EditorGUI.DrawRect(new Rect(rect.x, header.yMax, rect.width, contentHeight), InspectorStyle.ContentBackground);
                 DrawBorder(new Rect(rect.x, rect.y, rect.width, header.height + contentHeight));
                 y = header.yMax + BoxPadding;
             }
@@ -1720,7 +1718,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (Event.current.type == EventType.Repaint)
             {
-                EditorGUI.DrawRect(headerBackground, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                EditorGUI.DrawRect(headerBackground, InspectorStyle.HeaderBackground);
                 DrawBorder(rect);
             }
 
@@ -1745,7 +1743,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (property.arraySize == 0)
             {
-                countStyle.normal.textColor = Color.gray;
+                countStyle.normal.textColor = InspectorStyle.CountLabel;
             }
 
             EditorGUI.LabelField(countRect, property.arraySize == 0 ? "Empty" : (property.arraySize == 1 ? "1 Item" : property.arraySize + " Items"), countStyle);
@@ -1961,7 +1959,7 @@ namespace ColorlessCore.Inspector.Editor
                 var targetRect = elementRects[_dragTarget];
                 var lineY = _dragTarget > _dragIndex ? targetRect.yMax - 1f : targetRect.y;
 
-                EditorGUI.DrawRect(new Rect(targetRect.x, lineY, targetRect.width, 2f), Color.white);
+                EditorGUI.DrawRect(new Rect(targetRect.x, lineY, targetRect.width, 2f), InspectorStyle.DragInsertionLine);
             }
         }
 

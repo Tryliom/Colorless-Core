@@ -713,10 +713,10 @@ namespace ColorlessCore.Inspector.Editor
         {
             if (_headerTexture == null)
             {
-                _headerTexture = MakeTexture(EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                _headerTexture = MakeTexture(InspectorStyle.HeaderBackground);
             }
 
-            var rect = GUILayoutUtility.            GetRect(0f, 26f, GUILayout.ExpandWidth(true));
+            var rect = GUILayoutUtility.GetRect(0f, InspectorStyle.BoxHeaderHeight, GUILayout.ExpandWidth(true));
 
             if (Event.current.type == EventType.Repaint)
             {
@@ -735,7 +735,7 @@ namespace ColorlessCore.Inspector.Editor
         {
             if (_contentTexture == null || _contentStyle == null)
             {
-                _contentTexture = MakeTexture(EditorGUIUtility.isProSkin ? new Color(0.19f, 0.19f, 0.19f) : new Color(0.78f, 0.78f, 0.78f));
+                _contentTexture = MakeTexture(InspectorStyle.ContentBackground);
                 _contentStyle = new GUIStyle
                 {
                     padding = new RectOffset(4, 4, 3, 3),
@@ -836,7 +836,7 @@ namespace ColorlessCore.Inspector.Editor
 
                 var line = EditorGUILayout.GetControlRect(false, 1f);
 
-                EditorGUI.DrawRect(line, new Color(0.5f, 0.5f, 0.5f, 0.6f));
+                EditorGUI.DrawRect(line, InspectorStyle.HorizontalLine);
                 GUILayout.Space(2f);
             }
 
@@ -1153,7 +1153,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (Event.current.type == EventType.Repaint)
             {
-                EditorGUI.DrawRect(headerRect, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                EditorGUI.DrawRect(headerRect, InspectorStyle.HeaderBackground);
             }
 
             open = EditorGUI.Foldout(new Rect(headerRect.x + 14f, headerRect.y + 3f, headerRect.width - 100f, 16f), open, label, true);
@@ -1163,7 +1163,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (list.Count == 0)
             {
-                countStyle.normal.textColor = Color.gray;
+                countStyle.normal.textColor = InspectorStyle.CountLabel;
             }
 
             EditorGUI.LabelField(new Rect(headerRect.xMax - 86f, headerRect.y, 80f, headerRect.height),

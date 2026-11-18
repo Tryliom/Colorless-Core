@@ -149,7 +149,7 @@ namespace ColorlessCore.Inspector.Editor
 
             var fillRect = new Rect(rect.x, rect.y, rect.width * fillPercent, rect.height);
 
-            EditorGUI.DrawRect(rect, new Color(0.13f, 0.13f, 0.13f));
+            EditorGUI.DrawRect(rect, InspectorStyle.ProgressBarBackground);
             EditorGUI.DrawRect(fillRect, barColor);
 
             // set alignment and cache the default

@@ -6,8 +6,8 @@ namespace ColorlessCore.Inspector.Editor
     /// <summary>Shared min/max slider with number fields and an optional step.</summary>
     public static class MinMaxSliderGUI
     {
-        private const float Spacing = 4f;
-        private const float FieldWidth = 50f;
+        private const float Spacing = InspectorStyle.MinMaxSliderSpacing;
+        private const float FieldWidth = InspectorStyle.MinMaxSliderFieldWidth;
 
         /// <summary>Draws [min field][slider][max field] in the rect and returns true when a value changed.</summary>
         public static bool Draw(Rect rect, ref float min, ref float max, float limitMin, float limitMax, float step, bool isInt)

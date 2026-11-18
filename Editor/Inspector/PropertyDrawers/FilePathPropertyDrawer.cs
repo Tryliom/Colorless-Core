@@ -10,7 +10,7 @@ namespace ColorlessCore.Inspector.Editor
         private const string TypeWarningMessage = "{0} must be a string";
         private const string FileNotFoundWarningMessage = "{0} does not exist";
         private const string BrowseButtonLabel = "Browse";
-        private const float BrowseButtonWidth = 60.0f;
+        private const float BrowseButtonWidth = InspectorStyle.BrowseButtonWidth;
 
         protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
         {

@@ -10,9 +10,9 @@ namespace ColorlessCore.Inspector.Editor
     /// </summary>
     public static class TabGroupUtility
     {
-        public const float BoxPaddingLeft = 18f;
-        public const float BoxPaddingRight = 6f;
-        public const float BoxPaddingVertical = 6f;
+        public const float BoxPaddingLeft = InspectorStyle.TabBoxPaddingLeft;
+        public const float BoxPaddingRight = InspectorStyle.TabBoxPaddingRight;
+        public const float BoxPaddingVertical = InspectorStyle.TabBoxPaddingVertical;
 
         private static GUIStyle _boxStyle;
 

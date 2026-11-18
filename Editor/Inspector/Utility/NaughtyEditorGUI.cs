@@ -11,8 +11,8 @@ namespace ColorlessCore.Inspector.Editor
 {
     public static class NaughtyEditorGUI
     {
-        public const float IndentLength = 15.0f;
-        public const float HorizontalSpacing = 2.0f;
+        public const float IndentLength = InspectorStyle.IndentLength;
+        public const float HorizontalSpacing = InspectorStyle.HorizontalSpacing;
 
         private static GUIStyle _buttonStyle = new GUIStyle(GUI.skin.button) { richText = true };
 

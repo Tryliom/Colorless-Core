@@ -15,10 +15,10 @@ namespace ColorlessCore.Inspector.Editor
     public static class NaughtyTableDrawer
     {
         private const BindingFlags MemberFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-        private const float RowButtonWidth = 22f;
-        private const float RowPadding = 3f;
-        private const float MinColumnWidth = 60f;
-        private const float NestedLabelWidth = 70f;
+        private const float RowButtonWidth = InspectorStyle.TableRowButtonWidth;
+        private const float RowPadding = InspectorStyle.TableRowPadding;
+        private const float MinColumnWidth = InspectorStyle.TableMinColumnWidth;
+        private const float NestedLabelWidth = InspectorStyle.TableNestedLabelWidth;
         private static int _currentRow;
         private const int MaxDepth = 4;
 
@@ -168,8 +168,8 @@ namespace ColorlessCore.Inspector.Editor
             }
         }
 
-        private const float CellSidePadding = 2f;
-        private const float CellRightPadding = 8f;
+        private const float CellSidePadding = InspectorStyle.TableCellSidePadding;
+        private const float CellRightPadding = InspectorStyle.TableCellRightPadding;
 
         private static void DrawSeparators(List<Column> columns, Rect headerRect, Rect outer)
         {
@@ -178,7 +178,7 @@ namespace ColorlessCore.Inspector.Editor
                 return;
             }
 
-            var color = EditorGUIUtility.isProSkin ? new Color(0.13f, 0.13f, 0.13f, 1f) : new Color(0.45f, 0.45f, 0.45f, 1f);
+            var color = InspectorStyle.TableBorder;
 
             for (var i = 1; i < columns.Count; i++)
             {
@@ -201,7 +201,7 @@ namespace ColorlessCore.Inspector.Editor
                 var isOpen = _listProperty != null ? _listProperty.isExpanded : _fallbackExpanded;
                 var background = isOpen ? new Rect(rect.x - 2f, rect.y, rect.width + 4f, rect.height) : rect;
 
-                EditorGUI.DrawRect(background, EditorGUIUtility.isProSkin ? new Color(0.26f, 0.26f, 0.26f) : new Color(0.72f, 0.72f, 0.72f));
+                EditorGUI.DrawRect(background, InspectorStyle.HeaderBackground);
             }
 
             if (Event.current.type == EventType.ContextClick && rect.Contains(Event.current.mousePosition))
@@ -218,7 +218,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (list.Count == 0)
             {
-                countStyle.normal.textColor = Color.gray;
+                countStyle.normal.textColor = InspectorStyle.CountLabel;
             }
 
             expanded = EditorGUI.Foldout(labelRect, expanded, label, true, EditorStyles.foldout);
@@ -375,7 +375,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (Event.current.type == EventType.Repaint)
             {
-                EditorGUI.DrawRect(rect, EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.78f, 0.78f, 0.78f));
+                EditorGUI.DrawRect(rect, InspectorStyle.ColumnHeaderBackground);
             }
 
             // Headers follow the real cell positions of the first row (previous repaint) so they stay aligned when cells overflow.
@@ -427,7 +427,7 @@ namespace ColorlessCore.Inspector.Editor
 
             if (Event.current.type == EventType.Repaint)
             {
-                EditorGUI.DrawRect(rect, index % 2 == 0 ? new Color(1f, 1f, 1f, 0.04f) : new Color(0f, 0f, 0f, 0.09f));
+                EditorGUI.DrawRect(rect, index % 2 == 0 ? InspectorStyle.EvenRow : InspectorStyle.OddRow);
             }
 
             GUILayout.Space(RowPadding);
@@ -1515,7 +1515,7 @@ namespace ColorlessCore.Inspector.Editor
 
         private static void DrawBorder(Rect rect)
         {
-            var color = EditorGUIUtility.isProSkin ? new Color(0.14f, 0.14f, 0.14f) : new Color(0.4f, 0.4f, 0.4f);
+            var color = InspectorStyle.NestedBorder;
 
             EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), color);
             EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), color);
