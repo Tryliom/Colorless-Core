@@ -1469,6 +1469,19 @@ namespace ColorlessCore.Inspector.Editor
 
         private static float _labelWidthOverride;
 
+        /// <summary>Label width applied by <see cref="Field"/> to leaf fields; 0 means automatic default.</summary>
+        public static float LabelWidthOverride
+        {
+            get => _labelWidthOverride;
+            set => _labelWidthOverride = value;
+        }
+
+        /// <summary>Measures the widest leaf label of the given properties.</summary>
+        public static float MeasureWidestLabel(List<SerializedProperty> properties)
+        {
+            return ComputeWidestLabel(properties);
+        }
+
         private static bool IsLeaf(SerializedProperty property)
         {
             return !IsDictionary(property) && !IsList(property) && !IsContainer(property);

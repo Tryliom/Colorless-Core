@@ -445,16 +445,24 @@ namespace ColorlessCore.Inspector.Editor
             var visible = run.Where(IsVisible).ToList();
             var names = visible.Select(i => i.Tab.Name).Distinct().ToList();
             var stateKey = $"NaughtyTab.{target.GetType().Name}.{key}.{string.Join("|", names)}";
-            var selected = Mathf.Clamp(SessionState.GetInt(stateKey, 0), 0, names.Count - 1);
+            var group = TabGroupUtility.Create(key, names, stateKey);
 
-            selected = GUILayout.Toolbar(selected, names.ToArray());
-            SessionState.SetInt(stateKey, selected);
+            group.Select(GUILayout.Toolbar(group.Selected, names.ToArray()));
 
-            var boxStyle = new GUIStyle(EditorStyles.helpBox) { padding = new RectOffset(18, 6, 6, 6) };
+            var tabItems = visible.Where(i => i.Tab.Name == group.SelectedName).ToList();
+            var previousLabelWidth = EditorGUIUtility.labelWidth;
+            var widest = TabGroupUtility.MeasureLabelWidth(tabItems.Select(i => i.Property), EditorGUIUtility.currentViewWidth);
 
-            EditorGUILayout.BeginVertical(boxStyle);
-            DrawLevel(visible.Where(i => i.Tab.Name == names[selected]).ToList(), depth + 1);
+            if (widest > 0f)
+            {
+                EditorGUIUtility.labelWidth = widest;
+            }
+
+            EditorGUILayout.BeginVertical(TabGroupUtility.BoxStyle);
+            DrawLevel(tabItems, depth + 1);
             EditorGUILayout.EndVertical();
+
+            EditorGUIUtility.labelWidth = previousLabelWidth;
         }
 
         private void DrawFoldoutOrBox(List<Item> run, int depth, string key)
