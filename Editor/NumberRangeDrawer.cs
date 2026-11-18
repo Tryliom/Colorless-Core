@@ -27,7 +27,7 @@ public class NumberRangeDrawer : PropertyDrawer
 		EditorGUI.BeginProperty(position, label, property);
 
 		var indent = EditorGUI.indentLevel;
-		var labelWidth = Mathf.Min(EditorGUIUtility.labelWidth, position.width * 0.3f);
+		var labelWidth = EditorGUIUtility.labelWidth;
 		var labelRect = new Rect(position.x, position.y, labelWidth, position.height);
 
 		EditorGUI.LabelField(labelRect, label);

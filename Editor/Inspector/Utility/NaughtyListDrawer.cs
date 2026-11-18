@@ -336,6 +336,10 @@ namespace ColorlessCore.Inspector.Editor
                     continue;
                 }
 
+                var previousOverride = _labelWidthOverride;
+
+                _labelWidthOverride = GetWidestLabel(run.Children);
+
                 foreach (var child in run.Children)
                 {
                     var childHeight = GetElementHeight(child, false);
@@ -343,6 +347,8 @@ namespace ColorlessCore.Inspector.Editor
                     Field(new Rect(rect.x, y, rect.width, childHeight), child, null, false, true);
                     y += childHeight + EditorGUIUtility.standardVerticalSpacing;
                 }
+
+                _labelWidthOverride = previousOverride;
             }
         }
 
@@ -692,7 +698,9 @@ namespace ColorlessCore.Inspector.Editor
             {
                 var previousLabelWidth = EditorGUIUtility.labelWidth;
 
-                EditorGUIUtility.labelWidth = Mathf.Min(previousLabelWidth, Mathf.Max(80f, rect.width * 0.3f));
+                EditorGUIUtility.labelWidth = _labelWidthOverride > 0f
+                    ? Mathf.Min(_labelWidthOverride, rect.width * 0.6f)
+                    : Mathf.Min(previousLabelWidth, Mathf.Max(80f, rect.width * 0.3f));
 
                 if (label != null)
                 {
@@ -1181,13 +1189,41 @@ namespace ColorlessCore.Inspector.Editor
 
         private static void DrawChildren(Rect rect, List<SerializedProperty> children, ref float y)
         {
+            var previousOverride = _labelWidthOverride;
+            var widest = GetWidestLabel(children);
+
             foreach (var child in children)
             {
                 var height = GetHeight(child);
 
+                _labelWidthOverride = widest;
                 Field(new Rect(rect.x, y, rect.width, height), child);
                 y += height + EditorGUIUtility.standardVerticalSpacing;
             }
+
+            _labelWidthOverride = previousOverride;
+        }
+
+        private static float GetWidestLabel(List<SerializedProperty> children)
+        {
+            var widest = 0f;
+
+            foreach (var child in children)
+            {
+                if (IsLeaf(child))
+                {
+                    widest = Mathf.Max(widest, EditorStyles.boldLabel.CalcSize(new GUIContent(child.displayName)).x + 8f);
+                }
+            }
+
+            return widest;
+        }
+
+        private static float _labelWidthOverride;
+
+        private static bool IsLeaf(SerializedProperty property)
+        {
+            return !IsDictionary(property) && !IsList(property) && !IsContainer(property);
         }
 
         private static bool DrawFoldoutHeader(Rect rect, bool open, FoldoutAttribute foldout, SerializedProperty toggle, bool bold)
