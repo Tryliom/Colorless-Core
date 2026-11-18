@@ -8,9 +8,14 @@ namespace ColorlessCore.Inspector.Editor
         {
             RequiredAttribute requiredAttribute = PropertyUtility.GetAttribute<RequiredAttribute>(property);
 
-            if (property.propertyType == SerializedPropertyType.ObjectReference)
+            if (property.propertyType == SerializedPropertyType.ObjectReference
+                || property.propertyType == SerializedPropertyType.String)
             {
-                if (property.objectReferenceValue == null)
+                var isMissing = property.propertyType == SerializedPropertyType.String
+                    ? string.IsNullOrWhiteSpace(property.stringValue)
+                    : property.objectReferenceValue == null;
+
+                if (isMissing)
                 {
                     string errorMessage = property.name + " is required";
                     if (!string.IsNullOrEmpty(requiredAttribute.Message))
@@ -23,7 +28,7 @@ namespace ColorlessCore.Inspector.Editor
             }
             else
             {
-                string warning = requiredAttribute.GetType().Name + " works only on reference types";
+                string warning = requiredAttribute.GetType().Name + " works only on reference types and strings";
                 NaughtyEditorGUI.HelpBox_Layout(warning, MessageType.Warning, context: property.serializedObject.targetObject);
             }
         }

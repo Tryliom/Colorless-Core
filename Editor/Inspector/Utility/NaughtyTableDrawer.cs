@@ -773,9 +773,27 @@ namespace ColorlessCore.Inspector.Editor
 
             var nestedLabelWidth = members.Where(m => !m.HideLabel).Select(MeasureLabel).DefaultIfEmpty(NestedLabelWidth).Max();
 
+            string openGroup = null;
+
             foreach (var member in members)
             {
                 var memberInfo = member.Field ?? (MemberInfo)member.Property;
+                var group = memberInfo.GetCustomAttribute<HorizontalGroupAttribute>(true)?.Name;
+
+                if (group != openGroup)
+                {
+                    if (openGroup != null)
+                    {
+                        EditorGUILayout.EndHorizontal();
+                    }
+
+                    openGroup = group;
+
+                    if (openGroup != null)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                    }
+                }
 
                 if (!ButtonUtility.IsVisible(obj, memberInfo))
                 {
@@ -785,8 +803,9 @@ namespace ColorlessCore.Inspector.Editor
                 var value = member.Field != null ? member.Field.GetValue(obj) : member.Property.GetValue(obj);
                 var memberLabel = member.HideLabel ? string.Empty : member.Title;
                 var enabled = ButtonUtility.IsEnabled(obj, memberInfo);
+                var labelWidth = group != null ? MeasureLabel(member) : nestedLabelWidth;
 
-                if (!DrawValue(ref value, memberLabel, readOnly || member.ReadOnly || !enabled, depth + 1, member.Field?.FieldType ?? member.Property.PropertyType, nestedLabelWidth))
+                if (!DrawValue(ref value, memberLabel, readOnly || member.ReadOnly || !enabled, depth + 1, member.Field?.FieldType ?? member.Property.PropertyType, labelWidth))
                 {
                     continue;
                 }
@@ -794,6 +813,11 @@ namespace ColorlessCore.Inspector.Editor
                 Mark();
                 member.Field?.SetValue(obj, value);
                 changed = true;
+            }
+
+            if (openGroup != null)
+            {
+                EditorGUILayout.EndHorizontal();
             }
 
             return changed;
