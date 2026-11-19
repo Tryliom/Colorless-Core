@@ -10,6 +10,7 @@ public class NumberRangeDrawer : PropertyDrawer
 	private const float TypeWidth = 50f;
 	private const float ModeWidth = 60f;
 	private const float FieldWidth = 50f;
+	private const float StepButtonWidth = 20f;
 
 	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 	{
@@ -81,6 +82,29 @@ public class NumberRangeDrawer : PropertyDrawer
 		{
 			value = Snap(value);
 			maxValue = Snap(maxValue);
+		}
+
+		if (hasLimits)
+		{
+			var leftRect = new Rect(rest.x, rest.y, StepButtonWidth, rest.height);
+			var rightRect = new Rect(rest.xMax - StepButtonWidth, rest.y, StepButtonWidth, rest.height);
+
+			rest = new Rect(leftRect.xMax + Spacing, rest.y, rightRect.x - leftRect.xMax - Spacing * 2f, rest.height);
+
+			var direction = GUI.Button(leftRect, "<") ? -1f : GUI.Button(rightRect, ">") ? 1f : 0f;
+
+			if (direction != 0f)
+			{
+				// Moves both bounds together without squeezing the range against a limit
+				var delta = direction * step;
+				var low = isRange ? Mathf.Min(value, maxValue) : value;
+				var high = isRange ? Mathf.Max(value, maxValue) : value;
+
+				delta = Mathf.Clamp(delta, settings.Min - low, settings.Max - high);
+				value += delta;
+				maxValue += delta;
+				GUI.changed = true;
+			}
 		}
 
 		if (isRange)
