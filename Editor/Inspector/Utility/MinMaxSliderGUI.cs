@@ -80,9 +80,10 @@ namespace ColorlessCore.Inspector.Editor
             return isInt ? Mathf.Round(value) : value;
         }
 
+        // Delayed fields commit on Enter/focus loss, so the min/max crossing check doesn't run while typing
         private static float DrawNumber(Rect rect, float value, bool isInt)
         {
-            return isInt ? EditorGUI.IntField(rect, Mathf.RoundToInt(value)) : EditorGUI.FloatField(rect, value);
+            return isInt ? EditorGUI.DelayedIntField(rect, Mathf.RoundToInt(value)) : EditorGUI.DelayedFloatField(rect, value);
         }
     }
 }

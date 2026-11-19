@@ -158,6 +158,7 @@ public class NumberRangeDrawer : PropertyDrawer
 
 	private static float DrawNumber(Rect rect, float value, bool isInt)
 	{
-		return isInt ? EditorGUI.IntField(rect, Mathf.RoundToInt(value)) : EditorGUI.FloatField(rect, value);
+		// Delayed so the min/max crossing check runs on commit, not on every keystroke
+		return isInt ? EditorGUI.DelayedIntField(rect, Mathf.RoundToInt(value)) : EditorGUI.DelayedFloatField(rect, value);
 	}
 }
