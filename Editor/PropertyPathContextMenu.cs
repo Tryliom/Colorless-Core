@@ -13,6 +13,8 @@ public static class PropertyPathContextMenu
 	{
 		EditorApplication.contextualPropertyMenu -= OnPropertyContextMenu;
 		EditorApplication.contextualPropertyMenu += OnPropertyContextMenu;
+		MyInspector.Editor.MyInspectorExtensions.CollectionContextMenu -= AddItems;
+		MyInspector.Editor.MyInspectorExtensions.CollectionContextMenu += AddItems;
 	}
 
 	private static void OnPropertyContextMenu(GenericMenu menu, SerializedProperty property)

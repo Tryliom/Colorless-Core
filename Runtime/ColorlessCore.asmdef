@@ -1,7 +1,9 @@
 {
   "name": "ColorlessCore",
   "rootNamespace": "ColorlessOdyssey",
-  "references": [],
+  "references": [
+    "MyInspector"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

@@ -3,6 +3,8 @@
   "rootNamespace": "ColorlessOdyssey",
   "references": [
     "ColorlessCore",
+    "MyInspector",
+    "MyInspector.Editor",
     "Unity.TextMeshPro",
     "Unity.2D.Sprite.Editor"
   ],
