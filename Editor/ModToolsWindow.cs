@@ -29,6 +29,22 @@ namespace ColorlessOdyssey
 			GetWindow<ModToolsWindow>("Mod Tools");
 		}
 
+		// The domain reload triggered by a package update serializes the request but drops the update callback
+		private void OnEnable()
+		{
+			EditorApplication.update -= PollRequest;
+
+			if (_request != null)
+			{
+				EditorApplication.update += PollRequest;
+			}
+		}
+
+		private void OnDisable()
+		{
+			EditorApplication.update -= PollRequest;
+		}
+
 		private void OnGUI()
 		{
 			EditorGUILayout.LabelField("Packages", EditorStyles.boldLabel);
@@ -118,8 +134,7 @@ namespace ColorlessOdyssey
 		{
 			var url = StripFragment(manifestValue);
 			var target = string.IsNullOrWhiteSpace(branch) ? url : $"{url}#{branch.Trim()}";
-
-			Debug.Log($"[ModTools] Updating {packageName} ({target})...");
+			
 			_requestPackage = packageName;
 			_request = Client.Add(target);
 			EditorApplication.update += PollRequest;
@@ -137,10 +152,6 @@ namespace ColorlessOdyssey
 			if (_request.Status == StatusCode.Failure)
 			{
 				Debug.LogError($"[ModTools] Update of {_requestPackage} failed: {_request.Error.message}");
-			}
-			else
-			{
-				Debug.Log($"[ModTools] {_requestPackage} updated to {_request.Result.version}.");
 			}
 
 			_request = null;
