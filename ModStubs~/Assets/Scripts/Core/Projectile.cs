@@ -148,7 +148,8 @@ public class ProjectileSettings
     [BoolTitle,Foldout("AoeLineSpawner")]
     public bool AoeLineSpawner;
     [ShowIf(nameof(AoeLineSpawner)),Foldout("AoeLineSpawner")]
-    public AoeType AoeType;
+    [SerializeField] private AoeId _aoeId;
+    public AoeId AoeType { get =>throw null;set =>throw null;}
     [ShowIf(nameof(AoeLineSpawner)),Foldout("AoeLineSpawner")]
     [Tooltip("Delay before each spawned aoe activates. 0 = use the aoe default.")]
     public float AoeLineDurationBeforeLaunch;
@@ -335,7 +336,8 @@ public class ProjectileOverTimeSettings
 public class ProjectileAttachedRaySettings
 {
     [Title("Ray")]
-    public RayType Type;
+    [SerializeField] private RayId _rayId;
+    public RayId Type { get =>throw null;set =>throw null;}
     public RayControlType RayControlType;
 
     [Title("Settings")]
@@ -870,17 +872,17 @@ public class Projectile : MonoBehaviour
 {throw new System.NotImplementedException();}
     public Transform GetSenderTransform()
 {throw new System.NotImplementedException();}
-    public void SetupAoeLineSpawner(AoeType aoeType, float durationBeforeLaunch = 0f)
+    public void SetupAoeLineSpawner(AoeId aoeType, float durationBeforeLaunch = 0f)
 {throw new System.NotImplementedException();}
     public void SetLevel3Color(ThemeColor level3Color)
 {throw new System.NotImplementedException();}
     public ThemeColor GetLevel3Color()
 {throw new System.NotImplementedException();}
-    public void SetFromWeapon(WeaponName weaponName = WeaponName.None)
+    public void SetFromWeapon(WeaponId weaponName = default)
 {throw new System.NotImplementedException();}
     public bool IsFromWeapon()
 {throw new System.NotImplementedException();}
-    public WeaponName GetWeaponName() {throw new System.NotImplementedException();}
+    public WeaponId GetWeaponName() {throw new System.NotImplementedException();}
     /**
      * The target game object must have a collider in order to trigger collision.
      */

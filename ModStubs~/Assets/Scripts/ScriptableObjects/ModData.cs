@@ -12,4 +12,6 @@ public class ModData : ScriptableObject
 	[InfoBox("All the prefabs of the mod must be added here, otherwise they won't be exported. This is the entry point for the mod export process.")]
     public List<Projectile> Projectiles ;
     public List<Weapon> Weapons ;
+    public List<Ray> Rays ;
+    public List<Aoe> Aoes ;
 }
