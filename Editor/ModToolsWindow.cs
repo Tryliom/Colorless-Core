@@ -149,7 +149,8 @@ namespace ColorlessOdyssey
 
 			EditorApplication.update -= PollRequest;
 
-			if (_request.Status == StatusCode.Failure)
+			// After a domain reload the restored request can report Failure without an Error even though the update succeeded
+			if (_request.Status == StatusCode.Failure && _request.Error != null)
 			{
 				Debug.LogError($"[ModTools] Update of {_requestPackage} failed: {_request.Error.message}");
 			}
