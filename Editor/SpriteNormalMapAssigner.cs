@@ -5,7 +5,7 @@ using UnityEngine;
 
 public static class SpriteNormalMapAssigner
 {
-    [MenuItem("Tools/Assign Normal Maps to Sprites")]
+    [MenuItem("Tools/Colorless Core/Assign Normal Maps to Sprites")]
     private static void AssignNormalMapsToSprites()
     {
         var guids = AssetDatabase.FindAssets("t:Texture2D");

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class TextureReadWriteEnabler
 {
-	[MenuItem("Tools/Enable Read-Write on All Textures")]
+	[MenuItem("Tools/Colorless Core/Enable Read-Write on All Textures")]
 	private static void EnableReadWriteOnAllTextures()
 	{
 		var guids = AssetDatabase.FindAssets("t:Texture2D");

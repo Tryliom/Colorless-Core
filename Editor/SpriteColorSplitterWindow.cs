@@ -99,7 +99,7 @@ public class SpriteColorSplitterWindow : EditorWindow
     private readonly List<SourcePreview> _previews = new ();
     private Vector2 _scrollPosition;
 
-    [MenuItem("Tools/Sprite Color Splitter")]
+    [MenuItem("Tools/Colorless Core/Sprite Color Splitter")]
     private static void OpenWindow()
     {
         var window = GetWindow<SpriteColorSplitterWindow>("Sprite Color Splitter");

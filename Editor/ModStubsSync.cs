@@ -16,74 +16,6 @@ namespace ColorlessOdyssey
 
 		private const string PendingKey = "ModStubsSync.Pending";
 
-		[MenuItem("Tools/Colorless Core/Sync Mod Stubs")]
-		public static void Sync()
-		{
-			var projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
-			var manifestPath = Path.Combine(projectRoot, "Packages", "manifest.json");
-			var url = File.Exists(manifestPath) ? ReadGitUrl(File.ReadAllText(manifestPath)) : null;
-
-			if (url == null)
-			{
-				SyncNow();
-
-				return;
-			}
-
-			// Re-adding the git URL without a hash resolves the latest commit; a domain reload may follow.
-			SessionState.SetBool(PendingKey, true);
-			Debug.Log("[ModStubsSync] Updating the package before syncing...");
-
-			var request = UnityEditor.PackageManager.Client.Add(url);
-
-			void Poll()
-			{
-				if (!request.IsCompleted)
-				{
-					return;
-				}
-
-				EditorApplication.update -= Poll;
-
-				if (request.Status == UnityEditor.PackageManager.StatusCode.Failure)
-				{
-					Debug.LogWarning($"[ModStubsSync] Package update failed ({request.Error.message}), syncing with the current version.");
-					RunPending();
-
-					return;
-				}
-
-				var current = PackageInfo.FindForAssetPath($"Packages/{PackageName}");
-				var currentHash = current?.git?.hash;
-				var latestHash = request.Result?.git?.hash;
-
-				if (currentHash == latestHash)
-				{
-					RunPending();
-
-					return;
-				}
-
-				// The new files are not imported yet: wait for the domain reload (OnLoad runs the sync), with a timeout as a safety net.
-				var deadline = EditorApplication.timeSinceStartup + 60;
-
-				void WaitForReload()
-				{
-					if (EditorApplication.timeSinceStartup < deadline)
-					{
-						return;
-					}
-
-					EditorApplication.update -= WaitForReload;
-					RunPending();
-				}
-
-				EditorApplication.update += WaitForReload;
-			}
-
-			EditorApplication.update += Poll;
-		}
-
 		[InitializeOnLoadMethod]
 		private static void OnLoad()
 		{
@@ -104,22 +36,7 @@ namespace ColorlessOdyssey
 			SyncNow();
 		}
 
-		private static string ReadGitUrl(string manifest)
-		{
-			var match = System.Text.RegularExpressions.Regex.Match(manifest, "\"" + PackageName + "\"\\s*:\\s*\"([^\"]+)\"");
-
-			if (!match.Success || !match.Groups[1].Value.Contains(".git"))
-			{
-				return null;
-			}
-
-			var value = match.Groups[1].Value;
-			var hash = value.IndexOf('#');
-
-			return hash >= 0 && value.Length - hash - 1 == 40 ? value[..hash] : value;
-		}
-
-		private static void SyncNow()
+		public static void SyncNow()
 		{
 			var projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
 
