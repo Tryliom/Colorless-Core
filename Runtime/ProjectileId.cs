@@ -60,6 +60,11 @@ namespace ColorlessOdyssey
         public static bool HasFlag(this ProjectileId id, ProjectileFlags flag) => (ProjectileIdRegistry.GetFlags(id) & flag) == flag;
         public static bool IsEnemyProjectile(this ProjectileId id) => id.HasFlag(ProjectileFlags.Enemy);
         public static bool IsMeleeProjectile(this ProjectileId id) => id.HasFlag(ProjectileFlags.Melee);
+
+        /// <summary>
+        /// "colorless_odyssey:ice_arrow" becomes "Ice Arrow", "my_mod:ball" becomes "My Mod - Ball".
+        /// </summary>
+        public static string ToDisplayName(this ProjectileId id) => ProjectileIdRegistry.ToDisplayName(id.Value);
     }
 
     /// <summary>
@@ -178,6 +183,7 @@ namespace ColorlessOdyssey
     {
         public const char Separator = ':';
 	    private const string ModTypeName = "ModdedProjectileId";
+        private const string BaseGameGroup = "colorless_odyssey";
 
         private static List<Entry> _entries;
         private static HashSet<string> _ids;
@@ -262,6 +268,40 @@ namespace ColorlessOdyssey
             }
 
             return builder.ToString();
+        }
+
+        public static bool IsBaseGameId(string id) => id != null && id.StartsWith(BaseGameGroup + Separator, StringComparison.Ordinal);
+
+        public static string ToDisplayName(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return string.Empty;
+            }
+
+            var separatorIndex = id.IndexOf(Separator);
+
+            if (separatorIndex < 0)
+            {
+                return Capitalize(id);
+            }
+
+            var group = id.Substring(0, separatorIndex);
+            var name = Capitalize(id.Substring(separatorIndex + 1));
+
+            return group == BaseGameGroup ? name : $"{Capitalize(group)} - {name}";
+        }
+
+        private static string Capitalize(string value)
+        {
+            var words = value.Split(new[] { '_', '.', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (var i = 0; i < words.Length; i++)
+            {
+                words[i] = char.ToUpperInvariant(words[i][0]) + words[i].Substring(1);
+            }
+
+            return string.Join(" ", words);
         }
 
         private static IEnumerable<Type> FindModTypes()

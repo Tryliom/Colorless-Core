@@ -12,7 +12,7 @@ namespace ColorlessOdyssey
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			var valueProperty = property.FindPropertyRelative("_value");
-			var currentText = string.IsNullOrEmpty(valueProperty.stringValue) ? "<none>" : valueProperty.stringValue;
+			var currentText = string.IsNullOrEmpty(valueProperty.stringValue) ? "<none>" : ProjectileIdRegistry.ToDisplayName(valueProperty.stringValue);
 
 			EditorGUI.BeginProperty(position, label, property);
 
@@ -65,16 +65,16 @@ namespace ColorlessOdyssey
 					var id = entry.Id.Value ?? string.Empty;
 					var separatorIndex = id.IndexOf(ProjectileIdRegistry.Separator);
 					var parent = root;
-					var name = id;
+					var name = ProjectileIdRegistry.ToDisplayName(id);
 
-					if (separatorIndex >= 0)
+					if (separatorIndex >= 0 && !ProjectileIdRegistry.IsBaseGameId(id))
 					{
 						var group = id[..separatorIndex];
-						name = id[(separatorIndex + 1)..];
+						name = ProjectileIdRegistry.ToDisplayName(id[(separatorIndex + 1)..]);
 
 						if (!groups.TryGetValue(group, out parent))
 						{
-							parent = new AdvancedDropdownItem(group);
+							parent = new AdvancedDropdownItem(ProjectileIdRegistry.ToDisplayName(group));
 							groups[group] = parent;
 							root.AddChild(parent);
 						}
