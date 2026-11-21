@@ -34,18 +34,18 @@ public class AoeOnHit
     [Range(1, 50)]
     public int SpawnNumber ;
 
-    [Header("Scale")]
+    [Title("Scale")]
     [NumberRangeSettings(NumberType.Float, 0f, 20f, 0.05f)]
     public NumberRange ScaleRange ;
     public bool ScaleWithProjectileSize;
     
-    [Header("Time before spawn")]
+    [Title("Time before spawn")]
     [NumberRangeSettings(NumberType.Float, 0f, 10f, 0.05f)]
     public NumberRange TimeBeforeSpawnRange ;
     [ShowIf(nameof(CanShowScaleDistance)),Tooltip("Scale the time before spawn based on the distance from center of the source: time * distanceScale")]
     public bool ScaleTimeOnDistance;
     
-    [Header("Damage")]
+    [Title("Damage")]
     public float BaseDamage;
     [Tooltip("Damage increase per main level (1-7), like 10 x 2 (level 2) = 20")]
     public float LevelRatio;

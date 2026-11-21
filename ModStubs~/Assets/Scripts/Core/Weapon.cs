@@ -443,15 +443,14 @@ public class ShootSettings
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float CriticalChance;
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
-    public int ProjectileNumber ;
+    [NumberRangeSettings(NumberType.Int, 1, 50, 1)]
+    public NumberRange ProjectileNumberRange ;
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
-    public float ProjectileSpeed;
+    [NumberRangeSettings(NumberType.Float, 1, 50, 0.5f)]
+    public NumberRange ProjectileSpeedRange ;
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
-    public float SpeedRandomPercentage;
-    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
-    public float LifeTime;
-    [ShowIf(nameof(IsNotMeleeWeaponOnly))]
-    public float LifeTimeRandomPercentage;
+    [NumberRangeSettings(NumberType.Float, 0.01f, 20, 0.25f)]
+    public NumberRange LifeTimeRange ;
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
     public float Knockback;
     [ShowIf(nameof(IsNotMeleeWeaponOnly))]
@@ -628,10 +627,14 @@ public class Weapon : MonoBehaviour
 {throw new System.NotImplementedException();}
     public string GetDescription(bool minified = false)
 {throw new System.NotImplementedException();}
-    /**
-     * Called before shooting, returns true if the weapon is going to shoot a mana overcharge shot (mana is full and energy is not armed), false otherwise
-     */
-    public bool OnWillShoot()
+    /// <summary>True when mana is full, no overcharge is reserved and the weapon is able to start a mana overcharge.</summary>
+    public bool CanStartManaOvercharge()
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Called when the active mana attack key is pressed: starts the overcharge attack if possible, or stops it if already active.
+    /// Returns true if the key was handled by this weapon.
+    /// </summary>
+    public bool OnActiveManaAttackPressed()
 {throw new System.NotImplementedException();}
     public void ShootFromWeaponController(bool perfectTiming)
 {throw new System.NotImplementedException();}

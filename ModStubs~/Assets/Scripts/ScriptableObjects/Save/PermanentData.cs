@@ -62,6 +62,8 @@ public class PermanentData : ScriptableObject
     
     public bool IsTutorialDone;
     public TutorialState TutorialState ;
+    // True once the player has fully released a charged shot, so the "hold" hint is never shown again
+    public bool IsHoldHintDone;
     
     public TimeStore PlayTime ;
     
