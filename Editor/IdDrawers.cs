@@ -135,6 +135,25 @@ namespace ColorlessOdyssey
 		}
 	}
 
+	[CustomPropertyDrawer(typeof(ProjectileId))]
+	public class ProjectileIdDrawer : PropertyDrawer
+	{
+		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+		{
+			IdDrawerUtility.Draw(position, property, label, "Projectile Id", () =>
+			{
+				var ids = new List<string>();
+
+				foreach (var entry in ProjectileIdRegistry.GetAll())
+				{
+					ids.Add(entry.Id.Value ?? string.Empty);
+				}
+
+				return ids;
+			});
+		}
+	}
+
 	[CustomPropertyDrawer(typeof(WeaponId))]
 	public class WeaponIdDrawer : PropertyDrawer
 	{
