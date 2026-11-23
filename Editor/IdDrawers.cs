@@ -24,7 +24,7 @@ namespace ColorlessOdyssey
 			{
 				var serializedObject = valueProperty.serializedObject;
 				var path = valueProperty.propertyPath;
-				var dropdown = new IdDropdown(new AdvancedDropdownState(), title, getIds(), selected =>
+				var dropdown = new IdDropdown(new AdvancedDropdownState(), title, getIds(), valueProperty.stringValue, selected =>
 				{
 					serializedObject.Update();
 					serializedObject.FindProperty(path).stringValue = selected;
@@ -52,11 +52,13 @@ namespace ColorlessOdyssey
 			private readonly string _title;
 			private readonly List<string> _ids;
 			private readonly Action<string> _onSelected;
+			private readonly string _current;
 
-			public IdDropdown(AdvancedDropdownState state, string title, List<string> ids, Action<string> onSelected) : base(state)
+			public IdDropdown(AdvancedDropdownState state, string title, List<string> ids, string current, Action<string> onSelected) : base(state)
 			{
 				_title = title;
 				_ids = ids;
+				_current = current;
 				_onSelected = onSelected;
 				minimumSize = new Vector2(0f, 300f);
 			}
@@ -65,30 +67,74 @@ namespace ColorlessOdyssey
 			{
 				var root = new AdvancedDropdownItem(_title);
 				var groups = new Dictionary<string, AdvancedDropdownItem>();
+				var groupOrder = new List<string>();
+				var selectedGroup = GetModGroup(_current);
+
+				if (selectedGroup != null)
+				{
+					groupOrder.Add(selectedGroup);
+				}
+
+				// Base game ids first, at the root
+				foreach (var id in _ids)
+				{
+					if (GetModGroup(id) == null)
+					{
+						root.AddChild(new Item(ProjectileIdRegistry.ToDisplayName(id), id));
+					}
+					else
+					{
+						var group = GetModGroup(id);
+
+						if (!groupOrder.Contains(group))
+						{
+							groupOrder.Add(group);
+						}
+					}
+				}
+
+				if (selectedGroup == null)
+				{
+					groupOrder.Sort(StringComparer.Ordinal);
+				}
+				else
+				{
+					groupOrder.Sort(1, groupOrder.Count - 1, StringComparer.Ordinal);
+				}
+
+				// Then one folder per mod, the one holding the current selection first
+				foreach (var group in groupOrder)
+				{
+					var folder = new AdvancedDropdownItem(ProjectileIdRegistry.ToDisplayName(group));
+					groups[group] = folder;
+					root.AddChild(folder);
+				}
 
 				foreach (var id in _ids)
 				{
-					var separatorIndex = id.IndexOf(ProjectileIdRegistry.Separator);
-					var parent = root;
-					var name = ProjectileIdRegistry.ToDisplayName(id);
+					var group = GetModGroup(id);
 
-					if (separatorIndex >= 0 && !ProjectileIdRegistry.IsBaseGameId(id))
+					if (group != null)
 					{
-						var group = id[..separatorIndex];
-						name = ProjectileIdRegistry.ToDisplayName(id[(separatorIndex + 1)..]);
+						var name = ProjectileIdRegistry.ToDisplayName(id[(id.IndexOf(ProjectileIdRegistry.Separator) + 1)..]);
 
-						if (!groups.TryGetValue(group, out parent))
-						{
-							parent = new AdvancedDropdownItem(ProjectileIdRegistry.ToDisplayName(group));
-							groups[group] = parent;
-							root.AddChild(parent);
-						}
+						groups[group].AddChild(new Item(name, id));
 					}
-
-					parent.AddChild(new Item(name, id));
 				}
 
 				return root;
+			}
+
+			private static string GetModGroup(string id)
+			{
+				var separatorIndex = string.IsNullOrEmpty(id) ? -1 : id.IndexOf(ProjectileIdRegistry.Separator);
+
+				if (separatorIndex < 0 || ProjectileIdRegistry.IsBaseGameId(id))
+				{
+					return null;
+				}
+
+				return id[..separatorIndex];
 			}
 
 			protected override void ItemSelected(AdvancedDropdownItem item)
