@@ -48,6 +48,11 @@ namespace ColorlessOdyssey
     {
         public readonly ProjectileFlags Flags;
 
+        /// <summary>
+        /// Name of the field (in the same declaring type) holding the player version of this projectile. Use nameof(...).
+        /// </summary>
+        public string PlayerVersion { get; set; }
+
         public ProjectileFlagsAttribute(ProjectileFlags flags)
         {
             Flags = flags;
@@ -60,6 +65,12 @@ namespace ColorlessOdyssey
         public static bool HasFlag(this ProjectileId id, ProjectileFlags flag) => (ProjectileIdRegistry.GetFlags(id) & flag) == flag;
         public static bool IsEnemyProjectile(this ProjectileId id) => id.HasFlag(ProjectileFlags.Enemy);
         public static bool IsMeleeProjectile(this ProjectileId id) => id.HasFlag(ProjectileFlags.Melee);
+
+        /// <summary>
+        /// Player version of a projectile, declared via <see cref="ProjectileFlagsAttribute.PlayerVersion"/>.
+        /// Defaults to PlayerMagicBall when none is declared.
+        /// </summary>
+        public static ProjectileId ToPlayerProjectileId(this ProjectileId id) => ProjectileIdRegistry.GetPlayerVersion(id);
 
         /// <summary>
         /// "colorless_odyssey:ice_arrow" becomes "Ice Arrow", "my_mod:ball" becomes "My Mod - Ball".
@@ -114,11 +125,11 @@ namespace ColorlessOdyssey
         public static ProjectileId SlowThunderBall = new("slow_thunder_ball");
         public static ProjectileId CrossThunderBall = new("cross_thunder_ball");
         public static ProjectileId KwakBall = new("kwak_ball");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(PlayerMagicArrow))]
 		public static ProjectileId EnemyMagicArrow = new("enemy_magic_arrow");
         public static ProjectileId PlayerMagicArrow = new("player_magic_arrow");
         public static ProjectileId FallingStar = new("falling_star");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(ThunderBall))]
 		public static ProjectileId EnemyThunderBall = new("enemy_thunder_ball");
         public static ProjectileId SagittariusArrow = new("sagittarius_arrow");
         public static ProjectileId SoulSword = new("soul_sword");
@@ -131,15 +142,15 @@ namespace ColorlessOdyssey
         public static ProjectileId GoldenBullet = new("golden_bullet");
         public static ProjectileId UnstableSpear = new("unstable_spear");
         public static ProjectileId ExplosiveSkull = new("explosive_skull");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(SoulSword))]
 		public static ProjectileId EnemySoulSword = new("enemy_soul_sword");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(GravityShell))]
 		public static ProjectileId EnemyShell = new("enemy_shell");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(FireBall))]
 		public static ProjectileId EnemyMeteor = new("enemy_meteor");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(Shuriken))]
 		public static ProjectileId EnemyShuriken = new("enemy_shuriken");
-		[ProjectileFlags(ProjectileFlags.Enemy)]
+		[ProjectileFlags(ProjectileFlags.Enemy, PlayerVersion = nameof(PlayerMagicArrow))]
 		public static ProjectileId EnemyPulsatingArrow = new("enemy_pulsating_arrow");
         public static ProjectileId ChainLightning = new("chain_lightning");
 		[ProjectileFlags(ProjectileFlags.Melee)]
@@ -188,6 +199,7 @@ namespace ColorlessOdyssey
         private static List<Entry> _entries;
         private static HashSet<string> _ids;
         private static Dictionary<string, ProjectileFlags> _flags;
+        private static Dictionary<string, ProjectileId> _playerVersions;
 
         public readonly struct Entry
         {
@@ -207,6 +219,7 @@ namespace ColorlessOdyssey
             _entries = new List<Entry>();
             _ids = new HashSet<string>();
             _flags = new Dictionary<string, ProjectileFlags>();
+            _playerVersions = new Dictionary<string, ProjectileId>();
 
             Collect(typeof(ProjectileIds), false);
 
@@ -234,6 +247,16 @@ namespace ColorlessOdyssey
             }
 
             return _flags.GetValueOrDefault(id.Value, ProjectileFlags.None);
+        }
+
+        public static ProjectileId GetPlayerVersion(ProjectileId id)
+        {
+            if (_playerVersions == null)
+            {
+                Initialize();
+            }
+
+            return _playerVersions.TryGetValue(id.Value, out var playerId) ? playerId : ProjectileIds.PlayerMagicBall;
         }
 
         /// <summary>
@@ -335,6 +358,8 @@ namespace ColorlessOdyssey
             var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static)
                 .Where(f => f.FieldType == typeof(ProjectileId) && !f.IsInitOnly);
 
+            var pendingPlayerVersions = new List<(string enemyId, string fieldName)>();
+
             foreach (var field in fields)
             {
                 var id = (ProjectileId)field.GetValue(null);
@@ -357,9 +382,28 @@ namespace ColorlessOdyssey
                 if (flagsAttribute != null)
                 {
                     _flags[id.Value] = flagsAttribute.Flags;
+
+                    if (!string.IsNullOrEmpty(flagsAttribute.PlayerVersion))
+                    {
+                        pendingPlayerVersions.Add((id.Value, flagsAttribute.PlayerVersion));
+                    }
                 }
 
                 _entries.Add(new Entry(id, isModded));
+            }
+
+            // Resolved after the loop so every target field already holds its namespaced id
+            foreach (var (enemyId, fieldName) in pendingPlayerVersions)
+            {
+                var target = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static);
+
+                if (target == null || target.FieldType != typeof(ProjectileId))
+                {
+                    Debug.LogWarning($"Player version '{fieldName}' of projectile '{enemyId}' not found in '{type.FullName}'.");
+                    continue;
+                }
+
+                _playerVersions[enemyId] = (ProjectileId) target.GetValue(null);
             }
         }
     }
