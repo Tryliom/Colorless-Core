@@ -84,7 +84,7 @@ public class Pattern
     [Tab("Action parameters")]
     public float AnimationSpeed ;
     
-    [Tab("Conditions")]
+    [Tab("Conditions", LabelMethod = nameof(GetConditionLabel))]
     public bool UseCondition;
     [ShowIf(nameof(UseCondition))]
     [Tab("Conditions")]
@@ -108,21 +108,62 @@ public class Pattern
     [Tab("Conditions")]
     public int MaxLoops;
     
-    [Tab("Animation")]
+    [Tab("Animation", LabelMethod = nameof(GetAnimationLabel))]
     public bool StartAttackAnimation;
     [Tab("Animation")]
     public bool StopAttackAnimation;
-    [Tab("Animation")]
+    [Tab("Animation"),Label("Continue Attack Animation")]
     public bool DoNotStopAttackAnimation;
     
     [SerializeReference,Tooltip("Patterns triggered while this one is executing. They never drive the animations.")]
-    [Tab("Parallel"),ListDrawerSettings(HideReferenceObjectPicker = true)]
+    [Tab("Parallel", LabelMethod = nameof(GetParallelLabel)),ListDrawerSettings(HideReferenceObjectPicker = true)]
     public List<ParallelPatternEntry> ParallelPatterns ;
     
     [HideInInspector] public ActionType ActionType;
     
     // True when this pattern is executed in parallel of another one, it must not touch the enemy animations
     public bool IsParallel { get; private set; }
+    
+    // Inspector-only variables
+    private string GetAnimationLabel()
+    {
+	    if (StartAttackAnimation)
+	    {
+		    return "Animation (Start)";
+	    }
+	    
+	    if (StopAttackAnimation)
+	    {
+		    return "Animation (Stop)";
+	    }
+	    
+	    if (DoNotStopAttackAnimation)
+	    {
+		    return "Animation (Continue)";
+	    }
+
+	    return "Animation";
+    }
+    private string GetConditionLabel()
+	{
+		var nextLink = NextLinkCondition != Link.None ? $" {NextLinkCondition.ToString().ToUpperInvariant()}" : "";
+		
+	    if (!UseCondition)
+	    {
+		    return "Conditions" + nextLink;
+	    }
+
+	    return $"Conditions ({Conditions.Count})" + nextLink;
+	}
+    private string GetParallelLabel()
+	{
+		if (ParallelPatterns == null || ParallelPatterns.Count == 0)
+		{
+			return "Parallel";
+		}
+
+		return $"Parallel ({ParallelPatterns.Count})";
+	}
     
     // Protected variables
     protected RunData RunData;
@@ -138,8 +179,6 @@ public class Pattern
     protected Vector2 TargetEntityVelocity =>throw null;
 
     public Vector3 ActualTarget =>throw null; 
-
-
     
     // Set up the pattern at the start of the game
     public void Setup(RunData runData, EnemyComponents self, Action<bool> toNextPattern)

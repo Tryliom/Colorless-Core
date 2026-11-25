@@ -4,15 +4,6 @@ using System.Collections.Generic;
 using ColorlessOdyssey;
 using UnityEngine;
 
-public static class ProjectileTypeExtensions
-{
-    /**
-     * Converts an enemy projectile type to its corresponding player projectile type.
-     * If the type does not have a direct player equivalent, it defaults to PlayerMagicBall.
-     */
-    public static ProjectileId ToPlayerProjectileId(this ProjectileId id)
-{throw new System.NotImplementedException();}}
-
 public class SpriteRendererData
 {
     public SpriteRenderer SpriteRenderer;

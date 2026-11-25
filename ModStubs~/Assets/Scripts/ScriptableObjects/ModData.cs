@@ -10,8 +10,92 @@ using UnityEngine;
 public class ModData : ScriptableObject
 {
 	[InfoBox("All the prefabs of the mod must be added here, otherwise they won't be exported. This is the entry point for the mod export process.")]
-    public List<Projectile> Projectiles ;
-    public List<Weapon> Weapons ;
-    public List<Ray> Rays ;
-    public List<Aoe> Aoes ;
+    public List<Projectile> Projectiles = new();
+    public List<Weapon> Weapons = new();
+    public List<Ray> Rays = new();
+    public List<Aoe> Aoes = new();
+
+#if UNITY_EDITOR
+    private const string IdValueField = "_value";
+
+    [Foldout("Tools"),ShowNonSerializedField,InfoBox("Rewrites the namespace of the ids (Projectile, Weapon, Ray, Aoe) serialized in the prefabs listed above. Use the snake_case namespace, ex: colorless_odyssey")]
+    private string _oldNamespace;
+    [Foldout("Tools"),ShowNonSerializedField]
+    private string _newNamespace;
+
+    [Foldout("Tools"),Button("Rename ids namespace")]
+    private void RenameIdsNamespace()
+    {
+        if (string.IsNullOrWhiteSpace(_oldNamespace) || string.IsNullOrWhiteSpace(_newNamespace))
+        {
+            Debug.LogWarning("Old and new namespace must be filled.");
+            return;
+        }
+
+        var oldPrefix = _oldNamespace.Trim() + ":";
+        var newPrefix = _newNamespace.Trim() + ":";
+        var prefabs = new List<GameObject>();
+
+        AddPrefabs(prefabs, Projectiles);
+        AddPrefabs(prefabs, Weapons);
+        AddPrefabs(prefabs, Rays);
+        AddPrefabs(prefabs, Aoes);
+
+        var count = 0;
+
+        foreach (var prefab in prefabs)
+        {
+            var changed = false;
+
+            foreach (var component in prefab.GetComponentsInChildren<Component>(true))
+            {
+                if (!component)
+                {
+                    continue;
+                }
+
+                var serializedObject = new UnityEditor.SerializedObject(component);
+                var property = serializedObject.GetIterator();
+
+                while (property.Next(true))
+                {
+                    if (property.propertyType != UnityEditor.SerializedPropertyType.String
+                        || property.name != IdValueField
+                        || !property.stringValue.StartsWith(oldPrefix, System.StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    property.stringValue = newPrefix + property.stringValue.Substring(oldPrefix.Length);
+                    count++;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            if (changed)
+            {
+                UnityEditor.EditorUtility.SetDirty(prefab);
+            }
+        }
+
+        UnityEditor.AssetDatabase.SaveAssets();
+        Debug.Log($"Renamed {count} id(s) from '{oldPrefix}' to '{newPrefix}' in {prefabs.Count} prefab(s).");
+    }
+
+    private static void AddPrefabs<T>(List<GameObject> prefabs, List<T> source) where T : Component
+    {
+        foreach (var item in source)
+        {
+            if (item && !prefabs.Contains(item.gameObject))
+            {
+                prefabs.Add(item.gameObject);
+            }
+        }
+    }
+#endif
 }
