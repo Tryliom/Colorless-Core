@@ -24,6 +24,6 @@ public class PrefabData : ScriptableObject
 	public Ray GetRayPrefab(RayId type)
 {throw new System.NotImplementedException();}
 	public Projectile GetProjectilePrefab(ProjectileId id)
-{throw new System.NotImplementedException();}    
+{throw new System.NotImplementedException();}
 	public Aoe GetAoePrefab(AoeId type)
 {throw new System.NotImplementedException();}}

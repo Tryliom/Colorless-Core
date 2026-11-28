@@ -245,6 +245,8 @@ public class RunData : ScriptableObject
 {throw new System.NotImplementedException();}
     public void DropWeapon(WeaponData weaponData)
 {throw new System.NotImplementedException();}
+    public void DropWeapon(WeaponData weaponData, Vector3 position)
+{throw new System.NotImplementedException();}
     public void GoToNextRoom()
 {throw new System.NotImplementedException();}    
     public int GetAverageEnemyLevel(EnemyType enemyType = EnemyType.Dummy)

@@ -14,6 +14,12 @@ public class SynthesizerMenu : BaseMenu
 {throw new System.NotImplementedException();}
     protected override void OnHide(bool byEscape = false)
 {throw new System.NotImplementedException();}
+    /// <summary>
+    /// Removes the weapons from the menu, so they are placed again the next time it is opened.
+    /// Needed when the list of weapons changes, such as after a mod reload.
+    /// </summary>
+    public void ClearWeapons()
+{throw new System.NotImplementedException();}
     public void DisplayWeapons()
 {throw new System.NotImplementedException();}    
     public void DisplayRelics()

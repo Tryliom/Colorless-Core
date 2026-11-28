@@ -18,6 +18,12 @@ public StatsData PerfectTimingBoostStats ;
 {throw new System.NotImplementedException();}    
     public List<Weapon> GetAllWeapons()
 {throw new System.NotImplementedException();}    
+    /// <summary>Number of weapons of the base game, mods excluded.</summary>
+    public int BaseWeaponCount =>throw null;
+
+    /// <summary>Number of base game weapons discovered in the given save.</summary>
+    public int CountDiscoveredBaseWeapons(PermanentData data)
+{throw new System.NotImplementedException();}
     public void OnEnterNewRoom()
 {throw new System.NotImplementedException();}    
     // Functions to manage weapons color effects, used to centralize the code for it, maybe not the best place to put it tho

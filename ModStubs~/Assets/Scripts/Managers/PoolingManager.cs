@@ -38,6 +38,12 @@ public class PoolingManager : MonoBehaviour
         public float DisabledTimer;
     }
 
+    /// <summary>Creates the pools of the loaded mod. To call after a mod is loaded.</summary>
+    public void RegisterModPools()
+{throw new System.NotImplementedException();}
+    /// <summary>Destroys the pooled objects of the loaded mod. To call before the mod is unloaded.</summary>
+    public void RemoveModPools()
+{throw new System.NotImplementedException();}
     /// <summary>
     /// Returns an object of the generic pool <paramref name="id"/>, or instantiates <paramref name="prefab"/> if none is available.
     /// A reused object gets <see cref="IPoolable.OnPoolStart"/> before its next update, a new one gets Start from Unity.

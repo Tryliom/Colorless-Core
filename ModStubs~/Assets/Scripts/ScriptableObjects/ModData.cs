@@ -16,6 +16,144 @@ public class ModData : ScriptableObject
     public List<Aoe> Aoes = new();
 
 #if UNITY_EDITOR
+    [Foldout("Tools"),Button("Export to TestMod")]
+    [InfoBox("Exports this ModData, its dependencies and the scripts of its folder (Editor folders excluded) to the TestMod folder of the game. Reload it in game with ctrl + F1.")]
+    private void ExportToTestMod()
+    {
+        // A bundle cannot be built while the inspector is being drawn
+        UnityEditor.EditorApplication.delayCall += Export;
+    }
+
+    private void Export()
+    {
+        var assetPath = UnityEditor.AssetDatabase.GetAssetPath(this);
+        var modFolder = System.IO.Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
+
+        if (string.IsNullOrEmpty(modFolder) || modFolder == "Assets")
+        {
+            Debug.LogError("[ModExport] Put the ModData in its own folder, along with the scripts of the mod.", this);
+            return;
+        }
+
+        var scripts = new List<string>();
+
+        foreach (var file in System.IO.Directory.GetFiles(modFolder, "*.cs", System.IO.SearchOption.AllDirectories))
+        {
+            var path = file.Replace('\\', '/');
+
+            if (!path.Contains("/Editor/"))
+            {
+                scripts.Add(path);
+            }
+        }
+
+        if (!AreScriptsValid(scripts) || !ArePrefabsValid(modFolder))
+        {
+            return;
+        }
+
+        UnityEditor.AssetDatabase.SaveAssets();
+
+        var buildFolder = System.IO.Path.GetFullPath("Temp/ModExport");
+
+        System.IO.Directory.CreateDirectory(buildFolder);
+
+        // A unique name per export, as Unity refuses to load two bundles with the same internal name
+        var bundleName = $"mod_{System.DateTime.UtcNow.Ticks}";
+        var build = new UnityEditor.AssetBundleBuild { assetBundleName = bundleName, assetNames = new[] { assetPath } };
+        var manifest = UnityEditor.BuildPipeline.BuildAssetBundles(buildFolder, new[] { build },
+            UnityEditor.BuildAssetBundleOptions.None, UnityEditor.EditorUserBuildSettings.activeBuildTarget);
+
+        if (!manifest)
+        {
+            Debug.LogError("[ModExport] The bundle build failed.", this);
+            return;
+        }
+
+        var target = ColorlessOdyssey.ModPaths.TestModFolder;
+        var scriptsTarget = System.IO.Path.Combine(target, ColorlessOdyssey.ModPaths.ScriptsFolderName);
+
+        System.IO.Directory.CreateDirectory(target);
+
+        // Removes the scripts of the previous export
+        if (System.IO.Directory.Exists(scriptsTarget))
+        {
+            System.IO.Directory.Delete(scriptsTarget, true);
+        }
+
+        System.IO.File.Copy(System.IO.Path.Combine(buildFolder, bundleName),
+            System.IO.Path.Combine(target, ColorlessOdyssey.ModPaths.BundleFileName), true);
+
+        foreach (var script in scripts)
+        {
+            var destination = System.IO.Path.Combine(scriptsTarget, script.Substring(modFolder.Length + 1));
+
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(destination)!);
+            System.IO.File.Copy(script, destination);
+        }
+
+        Debug.Log($"[ModExport] Mod exported with {scripts.Count} script(s) to {target}");
+    }
+
+    /// <summary>Runs the checks of the game, to report the errors before it rejects the mod.</summary>
+    private static bool AreScriptsValid(List<string> scripts)
+    {
+        if (scripts.Count == 0)
+        {
+            return true;
+        }
+
+        var errors = new List<string>();
+
+        if (ColorlessOdyssey.Modding.ModScriptCompiler.Compile("ModExportCheck", scripts, errors) != null)
+        {
+            return true;
+        }
+
+        foreach (var error in errors)
+        {
+            Debug.LogError($"[ModExport] {error}");
+        }
+
+        return false;
+    }
+
+    private bool ArePrefabsValid(string modFolder)
+    {
+        var prefabs = new List<GameObject>();
+        var isValid = true;
+
+        AddPrefabs(prefabs, Projectiles);
+        AddPrefabs(prefabs, Weapons);
+        AddPrefabs(prefabs, Rays);
+        AddPrefabs(prefabs, Aoes);
+
+        foreach (var prefab in prefabs)
+        {
+            foreach (var behaviour in prefab.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (!behaviour)
+                {
+                    Debug.LogError($"[ModExport] {prefab.name} has a missing script.", prefab);
+                    isValid = false;
+                    continue;
+                }
+
+                var script = UnityEditor.MonoScript.FromMonoBehaviour(behaviour);
+                var scriptPath = script ? UnityEditor.AssetDatabase.GetAssetPath(script) : null;
+
+                if (scriptPath != null && scriptPath.StartsWith(modFolder + "/", System.StringComparison.Ordinal))
+                {
+                    Debug.LogError($"[ModExport] {prefab.name} uses the mod script {behaviour.GetType().Name} directly, the game " +
+                                   "cannot load it. Add a ModScriptHost and write the full name of the class in it.", prefab);
+                    isValid = false;
+                }
+            }
+        }
+
+        return isValid;
+    }
+
     private const string IdValueField = "_value";
 
     [Foldout("Tools"),ShowNonSerializedField,InfoBox("Rewrites the namespace of the ids (Projectile, Weapon, Ray, Aoe) serialized in the prefabs listed above. Use the snake_case namespace, ex: colorless_odyssey")]
