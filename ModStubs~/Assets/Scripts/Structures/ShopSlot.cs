@@ -30,6 +30,22 @@ public class ShopSlot : MonoBehaviour
 {throw new System.NotImplementedException();}    
     public void SetDiscounted(bool isDiscounted)
 {throw new System.NotImplementedException();}    
+    /// <summary>
+    /// Returns true if the slot holds a paid item that no pending effect is about to make free.
+    /// </summary>
+    public bool CanBecomeFree()
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Reserves the slot while an effect is on its way to make it free, so no other effect can target it.
+    /// The reservation is released by <see cref="SetFree"/> or when the slot is emptied.
+    /// </summary>
+    public void ReserveFree()
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Makes the slot free if its reservation is still pending. Does nothing if the item was bought in the meantime.
+    /// </summary>
+    public void ApplyReservedFree()
+{throw new System.NotImplementedException();}
     public void SetFree(bool isFree)
 {throw new System.NotImplementedException();}    
     public ShopSlotItemData GetData()

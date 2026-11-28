@@ -15,7 +15,7 @@ using Random = UnityEngine.Random;
 [Serializable]
 public class AoeSettings
 {
-    [Title("Aoe")]
+    [EnumTitle]
     public AoeId AoeId;
 
     [BoolTitle("Override Damage Type"),Foldout("OverrideDamageType")]
@@ -28,11 +28,11 @@ public class AoeSettings
     public int EffectStacks ;
 
     [Title("Radius")]
-    [BoolField]
+    [BoolTitle,Foldout("2D Radius")]
     public bool Use2DRadius;
-    [ShowIf(nameof(Use2DRadius)),NumberRangeSettings(NumberType.Float, 0f, 30f, 0.25f)]
+    [ShowIf(nameof(Use2DRadius)),Foldout("2D Radius"),NumberRangeSettings(NumberType.Float, 0f, 30f, 0.25f)]
     public NumberRange RadiusXRange ;
-    [ShowIf(nameof(Use2DRadius)),NumberRangeSettings(NumberType.Float, 0f, 30f, 0.25f)]
+    [ShowIf(nameof(Use2DRadius)),Foldout("2D Radius"),NumberRangeSettings(NumberType.Float, 0f, 30f, 0.25f)]
     public NumberRange RadiusYRange ;
     [HideIf(nameof(Use2DRadius)),NumberRangeSettings(NumberType.Float, 0f, 30f, 0.25f)]
     public NumberRange RadiusRange ;
@@ -93,7 +93,7 @@ internal enum Phase
     Disparition
 }
 
-public class Aoe : MonoBehaviour
+public class Aoe : MonoBehaviour, IPoolable
 {
     /// <summary>Tracks an enemy currently being pulled and the remaining pull duration.</summary>
     private class EnemyPullData
@@ -199,6 +199,8 @@ public class Aoe : MonoBehaviour
     public event Action<Aoe> OnDeactivated;
 
     public void Deactivate()
+{throw new System.NotImplementedException();}
+    public void OnTakenFromPool()
 {throw new System.NotImplementedException();}
     public void Reset()
 {throw new System.NotImplementedException();}

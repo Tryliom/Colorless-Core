@@ -16,7 +16,7 @@ public class DamageDealtDictionary : UnitySerializedDictionary<DamageType, ulong
 [Serializable]
 public class PlayerAllyData
 {
-    public EnemyName Name;
+    public EnemyId Name;
     public string UniqueID;
     public float CurrentHealthRatio;
     public float CurrentArmorRatio;
@@ -65,7 +65,7 @@ public class RunData : ScriptableObject
     public int DebugStartGold;
     public int DebugStartRerolls;
     [Tooltip("Spawned with ctrl + F5 in debug mode")]
-    public EnemyName DebugEnemyToSpawn;
+    public EnemyId DebugEnemyToSpawn;
     
     [Header("Data")]
     public RoomData RoomData;
@@ -320,7 +320,7 @@ public class RunData : ScriptableObject
      */
     public float GetAngleToNearestEnemy(Vector3 fromPosition = default, float fallbackAngle = 0f)
 {throw new System.NotImplementedException();}
-    public bool CanSummon(EnemyName ally)
+    public bool CanSummon(EnemyId ally)
 {throw new System.NotImplementedException();}
     public bool IsRelicDiscovered(Relic relic)
 {throw new System.NotImplementedException();}

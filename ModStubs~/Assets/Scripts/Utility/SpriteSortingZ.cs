@@ -17,7 +17,7 @@ public enum SortingOrderMode
  * SpriteRenderer needed) to produce the _WorldFullColorOccluderRenderTexture channel used by
  * PP_PlayerAura to compare which element is drawn in front of/behind another.
  */
-public class SpriteSortingZ : MonoBehaviour
+public class SpriteSortingZ : MonoBehaviour, IPoolable
 {
     [SerializeField] private bool _noSprite;
     [SerializeField,Required,HideIf(nameof(_noSprite))] private SpriteRenderer _spriteRenderer;
@@ -42,4 +42,9 @@ public class SpriteSortingZ : MonoBehaviour
     public void SetCustomYOffset(float offset)
 {throw new System.NotImplementedException();}    
     public bool IsLinkedTo(SpriteSortingZ other)
+{throw new System.NotImplementedException();}
+    public void OnTakenFromPool() {throw new System.NotImplementedException();}
+    public void OnPoolStart()
+{throw new System.NotImplementedException();}
+    public void OnReturnedToPool()
 {throw new System.NotImplementedException();}}

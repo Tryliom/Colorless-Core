@@ -3,6 +3,9 @@
   "displayName": "Colorless Core",
   "version": "0.2.0",
   "unity": "6000.0",
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "17.5.0"
+  },
   "description": "Shared core of Colorless Odyssey (ids, registries) used by the game and by mods.",
   "author": {
     "name": "Tryliom"

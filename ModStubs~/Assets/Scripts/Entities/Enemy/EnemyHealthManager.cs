@@ -131,9 +131,13 @@ internal class EnemyContactCooldown
     public float Cooldown;
 }
 
-public class EnemyHealthManager : MonoBehaviour
+public class EnemyHealthManager : MonoBehaviour, IPoolable
 {
-    
+
+    public void OnTakenFromPool()
+{throw new System.NotImplementedException();}
+    public void OnReturnedToPool()
+{throw new System.NotImplementedException();}    
     public void FinishDying()
 {throw new System.NotImplementedException();}    
     public void Die(DeathSource deathSource)

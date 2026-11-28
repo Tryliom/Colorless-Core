@@ -11,6 +11,7 @@ internal class SerializableObjectDictionary : UnitySerializedDictionary<string, 
 
 public class DataJsonConverter : JsonConverter<Data>
 {
+
 	public override void WriteJson(JsonWriter writer, Data value, JsonSerializer serializer)
 {throw new System.NotImplementedException();}
 	public override Data ReadJson(JsonReader reader, Type objectType, Data existingValue, bool hasExistingValue, JsonSerializer serializer)

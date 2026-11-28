@@ -25,9 +25,13 @@ public class EffectSettings
     public EffectSettings(Effect effect, float durationMultiplier = 0f, bool applyEffect = true, EffectStackingBehavior stackingBehavior = EffectStackingBehavior.Normal, SourceOrigin origin = null)
 {throw new System.NotImplementedException();}}
 
-public class EffectManager : MonoBehaviour
+public class EffectManager : MonoBehaviour, IPoolable
 {
     
+    public void OnTakenFromPool()
+{throw new System.NotImplementedException();}
+    public void OnReturnedToPool()
+{throw new System.NotImplementedException();}    
     /**
      * If the entity has already the effect, it will try to increase its stacks, if it's a stat effect, it will keep the highest remaining duration and add half of the stats of the new effect
      */

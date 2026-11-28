@@ -49,12 +49,11 @@ public class AoeOnHit
     public bool ScaleWithProjectileSize;
     
     [Title("Damage")]
-    public float BaseDamage;
     [Tooltip("Damage increase per main level (1-7), like 10 x 2 (level 2) = 20")]
     public float LevelRatio;
     [FormerlySerializedAs("ProjectileDamageRatio")]
     public float SourceDamageRatio;
-    
+
     public AoeSettings AoeSettings ;
 }
 

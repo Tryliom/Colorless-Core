@@ -24,7 +24,7 @@ public class CombinedPattern
     [ShowIf(nameof(LoopIfConditionMet)),Tooltip("-1 = no max loops")]
     public int MaxLoops ;
     
-    [SerializeReference,Title("Patterns"),OnValueChanged("OnPatternsChanged")]
+    [SerializeReference,Title("Patterns"),OnValueChanged("OnPatternsChanged"),ListDrawerSettings(ShowFoldout = true)]
     public List<Pattern> Patterns ;
 
     [SerializeReference,Title("Parallel"),Tooltip("Patterns triggered while this combined pattern is executing. They never drive the animations."),ListDrawerSettings(HideReferenceObjectPicker = true)]

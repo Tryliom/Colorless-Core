@@ -31,6 +31,11 @@ public class SpecialAbility : MonoBehaviour
         return description;
     }
     
+    /// <summary>
+    /// Returns whether the minified description differs from the normal one, without formatting either of them.
+    /// </summary>
+    public bool HasMinifiedDescription()
+{throw new System.NotImplementedException();}
     public List<Icon> Icons =>throw null;
     
     public string LocalizationNamePrefix =>throw null;

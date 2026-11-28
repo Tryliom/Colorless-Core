@@ -406,7 +406,7 @@ public class ProjectileAttachedRaySettings
     }
 }
 
-public class Projectile : MonoBehaviour
+public class Projectile : MonoBehaviour, IPoolable
 {
     /// <summary>Tracks an enemy currently being pulled and the remaining pull duration.</summary>
     private class EnemyPullData
@@ -422,13 +422,6 @@ public class Projectile : MonoBehaviour
         public ProjectileAttachedRaySettings Settings;
     }
     
-    [SerializeField,Foldout("Global References"),InfoBox("These fields must be only modified in the parent projectile !")]
-    private Material _defaultMaterial;
-    [SerializeField,Foldout("Global References")]
-    private Material _fullSaturationMaterial;
-    [SerializeField,Foldout("Global References")]
-    private Material _enemyMaterial;
-    
     [SerializeField,Foldout("Internal References"),Required] private CircleCollider2D _physicalCollider;
     [SerializeField,Foldout("Internal References"),Required] private Collider2D _hitCollider;
     
@@ -440,7 +433,13 @@ public class Projectile : MonoBehaviour
     
     [SerializeField,Foldout("Other")] private BurstExplosionSettings _explosionOnExpireSettings;
     
-    private enum ProjectileMaterialTypes { Default, FullSaturation, Enemy }
+    [SerializeField,Foldout("Setup Tools")]
+    private ProjectileMaterialType _projectileMaterialType;
+    [SerializeField,Foldout("Setup Tools"),ShowIf(nameof(HasCustomMaterial))]
+    [InfoBox("Must be based on the shader of the default projectile material, or expose _Saturation and _GlowColor.")]
+    private Material _customMaterial;
+
+    private bool HasCustomMaterial => _projectileMaterialType is ProjectileMaterialType.Custom;
 
     [Title("Main Properties")]
     [SerializeField]
@@ -833,6 +832,8 @@ public class Projectile : MonoBehaviour
     public void SetProjectileId(ProjectileId id)
 {throw new System.NotImplementedException();}    
     public void AddEnemyToIgnore(EnemyComponents enemy)
+{throw new System.NotImplementedException();}
+    public void OnTakenFromPool()
 {throw new System.NotImplementedException();}    
     public float GetFinalSpeed()
 {throw new System.NotImplementedException();}    

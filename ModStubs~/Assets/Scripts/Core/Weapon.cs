@@ -11,7 +11,7 @@ using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 [Serializable]
-public class SpawnableEntityDictionary : UnitySerializedDictionary<EnemyName, SpawnableEntity> {}
+public class SpawnableEntityDictionary : UnitySerializedDictionary<EnemyId, SpawnableEntity> {}
 
 [Serializable]
 public class SpawnableEntity
@@ -732,6 +732,13 @@ public class Weapon : MonoBehaviour
     public RayId GetRayType()
 {throw new System.NotImplementedException();}    
     public AoeId GetAoeType()
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Pre-instantiates in the pool every projectile, ray and aoe type this weapon can spawn, so the first
+    /// shot does not pay the Instantiate cost. Each type gets about one second of shots based on the weapon
+    /// attack speed (at least one instance).
+    /// </summary>
+    public void PrewarmPool(PoolingManager pool)
 {throw new System.NotImplementedException();}
     public bool CanShoot()
 {throw new System.NotImplementedException();}    

@@ -2,8 +2,13 @@
 using MyInspector;
 using UnityEngine;
 
-public class EnemyLifeBar : MonoBehaviour
+public class EnemyLifeBar : MonoBehaviour, IPoolable
 {
-    
+
+    public void OnTakenFromPool() {throw new System.NotImplementedException();}
+    public void OnPoolStart()
+{throw new System.NotImplementedException();}
+    public void OnReturnedToPool()
+{throw new System.NotImplementedException();}    
     public void OnSetHealthAndArmor()
 {throw new System.NotImplementedException();}}

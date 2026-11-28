@@ -6,7 +6,7 @@ using UnityEngine;
 /**
  * This component creates a reflection of the sprite on the water. It only works in the first main level, as it is disabled in all other levels to save performance (for the moment).
  */
-public class WaterReflection : MonoBehaviour
+public class WaterReflection : MonoBehaviour, IPoolable
 {
 	[SerializeField]
 	private bool _useTextureBottomPivot;
@@ -22,4 +22,10 @@ public class WaterReflection : MonoBehaviour
     public void SetUseTextureBottomPivot(bool useTextureBottomPivot)
 {throw new System.NotImplementedException();}    
     public void SetStatic(bool isStatic)
+{throw new System.NotImplementedException();}
+    public void OnTakenFromPool()
+{throw new System.NotImplementedException();}
+    public void OnPoolStart()
+{throw new System.NotImplementedException();}
+    public void OnReturnedToPool()
 {throw new System.NotImplementedException();}}

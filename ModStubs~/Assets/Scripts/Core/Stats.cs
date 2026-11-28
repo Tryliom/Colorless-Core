@@ -137,233 +137,327 @@ public class StatFieldInfo
 public class StatsData
 {
     private bool CanShowField => !ShowModifiedOnly;
+
+    /// <summary>
+    /// Incremented each time a stat value actually changes. Consumers compare it (see StatsDependencyTracker)
+    /// to skip recomputing stats derived from this instance when nothing changed.
+    /// </summary>
+    public int Version =>throw null;
+
+    [NonSerialized] private int _version;
+
+    private void SetValue<T>(ref T field, T value) where T : struct, IEquatable<T>
+    {
+        if (field.Equals(value))
+        {
+            return;
+        }
+
+        field = value;
+        _version++;
+    }
     
     public bool ShowModifiedOnly;
     [ShowIf(nameof(ShowRedHeartContainers))]
     [Foldout("Health"),InfoBox("1 Red Heart Container = 2 Red Hearts")]
-    [SerializeField] public int RedHeartContainers;
+    [SerializeField] private int _redHeartContainers;
+    public int RedHeartContainers { get =>throw null;set =>throw null;}
     private bool ShowRedHeartContainers => CanShowField || RedHeartContainers != 0;
     [ShowIf(nameof(ShowRedHearts))]
-    [SerializeField,Foldout("Health")] public int RedHearts;
+    [SerializeField,Foldout("Health")] private int _redHearts;
+    public int RedHearts { get =>throw null;set =>throw null;}
     private bool ShowRedHearts => CanShowField || RedHearts != 0;
     [ShowIf(nameof(ShowShields))]
-    [FormerlySerializedAs("BlueHearts")] [SerializeField,Foldout("Health")] public int Shields;
+    [SerializeField,Foldout("Health")] private int _shields;
+    public int Shields { get =>throw null;set =>throw null;}
     private bool ShowShields => CanShowField || Shields != 0;
     [ShowIf(nameof(ShowGreenHearts))]
-    [SerializeField,Foldout("Health")] public int GreenHearts;
+    [SerializeField,Foldout("Health")] private int _greenHearts;
+    public int GreenHearts { get =>throw null;set =>throw null;}
     private bool ShowGreenHearts => CanShowField || GreenHearts != 0;
     [ShowIf(nameof(ShowYellowHearts))]
-    [SerializeField,Foldout("Health")] public int YellowHearts;
+    [SerializeField,Foldout("Health")] private int _yellowHearts;
+    public int YellowHearts { get =>throw null;set =>throw null;}
     private bool ShowYellowHearts => CanShowField || YellowHearts != 0;
     [ShowIf(nameof(ShowSpeed))]
-    [SerializeField,Foldout("Basic Stats")] public float Speed;
+    [SerializeField,Foldout("Basic Stats")] private float _speed;
+    public float Speed { get =>throw null;set =>throw null;}
     private bool ShowSpeed => CanShowField || Speed != 0;
     [ShowIf(nameof(ShowCriticalChance))]
-    [SerializeField,Foldout("Basic Stats")] public float CriticalChance;
+    [SerializeField,Foldout("Basic Stats")] private float _criticalChance;
+    public float CriticalChance { get =>throw null;set =>throw null;}
     private bool ShowCriticalChance => CanShowField || CriticalChance != 0;
     [ShowIf(nameof(ShowCriticalDamage))]
-    [SerializeField,Foldout("Basic Stats")] public float CriticalDamage;
+    [SerializeField,Foldout("Basic Stats")] private float _criticalDamage;
+    public float CriticalDamage { get =>throw null;set =>throw null;}
     private bool ShowCriticalDamage => CanShowField || CriticalDamage != 0;
     [ShowIf(nameof(ShowAttackSpeedPercentage))]
-    [SerializeField,Foldout("Basic Stats")] public float AttackSpeedPercentage;
+    [SerializeField,Foldout("Basic Stats")] private float _attackSpeedPercentage;
+    public float AttackSpeedPercentage { get =>throw null;set =>throw null;}
     private bool ShowAttackSpeedPercentage => CanShowField || AttackSpeedPercentage != 0;
     [ShowIf(nameof(ShowTotalDamagePercentage))]
-    [SerializeField,Foldout("Basic Stats")] public float TotalDamagePercentage;
+    [SerializeField,Foldout("Basic Stats")] private float _totalDamagePercentage;
+    public float TotalDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowTotalDamagePercentage => CanShowField || TotalDamagePercentage != 0;
     [ShowIf(nameof(ShowWeaponDamagePercentage))]
-    [FormerlySerializedAs("DamagePercentage")] [SerializeField,Foldout("Basic Stats")] public float WeaponDamagePercentage;
+    [SerializeField,Foldout("Basic Stats")] private float _weaponDamagePercentage;
+    public float WeaponDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowWeaponDamagePercentage => CanShowField || WeaponDamagePercentage != 0;
     [ShowIf(nameof(ShowSpeedPercentage))]
-    [SerializeField,Foldout("Basic Stats")] public float SpeedPercentage;
+    [SerializeField,Foldout("Basic Stats")] private float _speedPercentage;
+    public float SpeedPercentage { get =>throw null;set =>throw null;}
     private bool ShowSpeedPercentage => CanShowField || SpeedPercentage != 0;
     [ShowIf(nameof(ShowElementalDamagePercentage))]
-    [SerializeField,Foldout("Basic Stats")] public float ElementalDamagePercentage;
+    [SerializeField,Foldout("Basic Stats")] private float _elementalDamagePercentage;
+    public float ElementalDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowElementalDamagePercentage => CanShowField || ElementalDamagePercentage != 0;
     [ShowIf(nameof(ShowNormalDamage))]
-    [SerializeField,Foldout("Damage Types")] public float NormalDamage;
+    [SerializeField,Foldout("Damage Types")] private float _normalDamage;
+    public float NormalDamage { get =>throw null;set =>throw null;}
     private bool ShowNormalDamage => CanShowField || NormalDamage != 0;
     [ShowIf(nameof(ShowNormalDamagePercentage))]
-    [SerializeField,Foldout("Damage Types")] public float NormalDamagePercentage;
+    [SerializeField,Foldout("Damage Types")] private float _normalDamagePercentage;
+    public float NormalDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowNormalDamagePercentage => CanShowField || NormalDamagePercentage != 0;
     [ShowIf(nameof(ShowFireDamage))]
-    [SerializeField,Foldout("Damage Types")] public float FireDamage;
+    [SerializeField,Foldout("Damage Types")] private float _fireDamage;
+    public float FireDamage { get =>throw null;set =>throw null;}
     private bool ShowFireDamage => CanShowField || FireDamage != 0;
     [ShowIf(nameof(ShowFireDamagePercentage))]
-    [SerializeField,Foldout("Damage Types")] public float FireDamagePercentage;
+    [SerializeField,Foldout("Damage Types")] private float _fireDamagePercentage;
+    public float FireDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowFireDamagePercentage => CanShowField || FireDamagePercentage != 0;
     [ShowIf(nameof(ShowFrostDamage))]
-    [SerializeField,Foldout("Damage Types")] public float FrostDamage;
+    [SerializeField,Foldout("Damage Types")] private float _frostDamage;
+    public float FrostDamage { get =>throw null;set =>throw null;}
     private bool ShowFrostDamage => CanShowField || FrostDamage != 0;
     [ShowIf(nameof(ShowFrostDamagePercentage))]
-    [SerializeField,Foldout("Damage Types")] public float FrostDamagePercentage;
+    [SerializeField,Foldout("Damage Types")] private float _frostDamagePercentage;
+    public float FrostDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowFrostDamagePercentage => CanShowField || FrostDamagePercentage != 0;
     [ShowIf(nameof(ShowElectricDamage))]
-    [SerializeField,Foldout("Damage Types")] public float ElectricDamage;
+    [SerializeField,Foldout("Damage Types")] private float _electricDamage;
+    public float ElectricDamage { get =>throw null;set =>throw null;}
     private bool ShowElectricDamage => CanShowField || ElectricDamage != 0;
     [ShowIf(nameof(ShowElectricDamagePercentage))]
-    [SerializeField,Foldout("Damage Types")] public float ElectricDamagePercentage;
+    [SerializeField,Foldout("Damage Types")] private float _electricDamagePercentage;
+    public float ElectricDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowElectricDamagePercentage => CanShowField || ElectricDamagePercentage != 0;
     [ShowIf(nameof(ShowPoisonDamage))]
-    [SerializeField,Foldout("Damage Types")] public float PoisonDamage;
+    [SerializeField,Foldout("Damage Types")] private float _poisonDamage;
+    public float PoisonDamage { get =>throw null;set =>throw null;}
     private bool ShowPoisonDamage => CanShowField || PoisonDamage != 0;
     [ShowIf(nameof(ShowPoisonDamagePercentage))]
-    [SerializeField,Foldout("Damage Types")] public float PoisonDamagePercentage;
+    [SerializeField,Foldout("Damage Types")] private float _poisonDamagePercentage;
+    public float PoisonDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowPoisonDamagePercentage => CanShowField || PoisonDamagePercentage != 0;
     [ShowIf(nameof(ShowSoulDamage))]
-    [SerializeField,Foldout("Damage Types")] public float SoulDamage;
+    [SerializeField,Foldout("Damage Types")] private float _soulDamage;
+    public float SoulDamage { get =>throw null;set =>throw null;}
     private bool ShowSoulDamage => CanShowField || SoulDamage != 0;
     [ShowIf(nameof(ShowSoulDamagePercentage))]
-    [SerializeField,Foldout("Damage Types")] public float SoulDamagePercentage;
+    [SerializeField,Foldout("Damage Types")] private float _soulDamagePercentage;
+    public float SoulDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowSoulDamagePercentage => CanShowField || SoulDamagePercentage != 0;
     [ShowIf(nameof(ShowProjectileSpeedPercentage))]
-    [SerializeField,Foldout("Projectile")] public float ProjectileSpeedPercentage;
+    [SerializeField,Foldout("Projectile")] private float _projectileSpeedPercentage;
+    public float ProjectileSpeedPercentage { get =>throw null;set =>throw null;}
     private bool ShowProjectileSpeedPercentage => CanShowField || ProjectileSpeedPercentage != 0;
     [ShowIf(nameof(ShowProjectileSizePercentage))]
-    [SerializeField,Foldout("Projectile")] public float ProjectileSizePercentage;
+    [SerializeField,Foldout("Projectile")] private float _projectileSizePercentage;
+    public float ProjectileSizePercentage { get =>throw null;set =>throw null;}
     private bool ShowProjectileSizePercentage => CanShowField || ProjectileSizePercentage != 0;
     [ShowIf(nameof(ShowProjectileRangePercentage))]
-    [SerializeField,Foldout("Projectile")] public float ProjectileRangePercentage;
+    [SerializeField,Foldout("Projectile")] private float _projectileRangePercentage;
+    public float ProjectileRangePercentage { get =>throw null;set =>throw null;}
     private bool ShowProjectileRangePercentage => CanShowField || ProjectileRangePercentage != 0;
     [ShowIf(nameof(ShowProjectileKnockbackPercentage))]
-    [SerializeField,Foldout("Projectile")] public float ProjectileKnockbackPercentage;
+    [SerializeField,Foldout("Projectile")] private float _projectileKnockbackPercentage;
+    public float ProjectileKnockbackPercentage { get =>throw null;set =>throw null;}
     private bool ShowProjectileKnockbackPercentage => CanShowField || ProjectileKnockbackPercentage != 0;
     [ShowIf(nameof(ShowProjectileBounceDamagePercentage))]
-    [SerializeField,Foldout("Projectile")] public float ProjectileBounceDamagePercentage;
+    [SerializeField,Foldout("Projectile")] private float _projectileBounceDamagePercentage;
+    public float ProjectileBounceDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowProjectileBounceDamagePercentage => CanShowField || ProjectileBounceDamagePercentage != 0;
     [ShowIf(nameof(ShowAngularSpeed))]
-    [FormerlySerializedAs("HomingAngle")] [SerializeField,Foldout("Projectile")] public float AngularSpeed;
+    [SerializeField,Foldout("Projectile")] private float _angularSpeed;
+    public float AngularSpeed { get =>throw null;set =>throw null;}
     private bool ShowAngularSpeed => CanShowField || AngularSpeed != 0;
     [ShowIf(nameof(ShowProjectileNumber))]
-    [SerializeField,Foldout("Projectile")] public float ProjectileNumber;
+    [SerializeField,Foldout("Projectile")] private float _projectileNumber;
+    public float ProjectileNumber { get =>throw null;set =>throw null;}
     private bool ShowProjectileNumber => CanShowField || ProjectileNumber != 0;
     [ShowIf(nameof(ShowHomingShots))]
-    [SerializeField,Foldout("Projectile Effects")] public bool HomingShots;
+    [SerializeField,Foldout("Projectile Effects")] private bool _homingShots;
+    public bool HomingShots { get =>throw null;set =>throw null;}
     private bool ShowHomingShots => CanShowField || HomingShots;
     [ShowIf(nameof(ShowPierceShots))]
-    [SerializeField,Foldout("Projectile Effects")] public float PierceShots;
+    [SerializeField,Foldout("Projectile Effects")] private float _pierceShots;
+    public float PierceShots { get =>throw null;set =>throw null;}
     private bool ShowPierceShots => CanShowField || PierceShots != 0;
     [ShowIf(nameof(ShowBouncingShots))]
-    [SerializeField,Foldout("Projectile Effects")] public float BouncingShots;
+    [SerializeField,Foldout("Projectile Effects")] private float _bouncingShots;
+    public float BouncingShots { get =>throw null;set =>throw null;}
     private bool ShowBouncingShots => CanShowField || BouncingShots != 0;
     [ShowIf(nameof(ShowRicochet))]
-    [SerializeField,Foldout("Projectile Effects")] public float Ricochet;
+    [SerializeField,Foldout("Projectile Effects")] private float _ricochet;
+    public float Ricochet { get =>throw null;set =>throw null;}
     private bool ShowRicochet => CanShowField || Ricochet != 0;
     [ShowIf(nameof(ShowPassThroughWall))]
-    [SerializeField,Foldout("Projectile Effects")] public bool PassThroughWall;
+    [SerializeField,Foldout("Projectile Effects")] private bool _passThroughWall;
+    public bool PassThroughWall { get =>throw null;set =>throw null;}
     private bool ShowPassThroughWall => CanShowField || PassThroughWall;
     [ShowIf(nameof(ShowControlledShots))]
-    [SerializeField,Foldout("Projectile Effects")] public bool ControlledShots;
+    [SerializeField,Foldout("Projectile Effects")] private bool _controlledShots;
+    public bool ControlledShots { get =>throw null;set =>throw null;}
     private bool ShowControlledShots => CanShowField || ControlledShots;
     [ShowIf(nameof(ShowDashCharges))]
-    [SerializeField,Foldout("Dash")] public int DashCharges;
+    [SerializeField,Foldout("Dash")] private int _dashCharges;
+    public int DashCharges { get =>throw null;set =>throw null;}
     private bool ShowDashCharges => CanShowField || DashCharges != 0;
     [ShowIf(nameof(ShowDashCooldownReductionPercentage))]
-    [SerializeField,Foldout("Dash")] public float DashCooldownReductionPercentage;
+    [SerializeField,Foldout("Dash")] private float _dashCooldownReductionPercentage;
+    public float DashCooldownReductionPercentage { get =>throw null;set =>throw null;}
     private bool ShowDashCooldownReductionPercentage => CanShowField || DashCooldownReductionPercentage != 0;
     [ShowIf(nameof(ShowAoeDamagePercentage))]
-    [SerializeField,Foldout("AoE")] public float AoeDamagePercentage;
+    [SerializeField,Foldout("AoE")] private float _aoeDamagePercentage;
+    public float AoeDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowAoeDamagePercentage => CanShowField || AoeDamagePercentage != 0;
     [ShowIf(nameof(ShowAoeRadiusPercentage))]
-    [SerializeField,Foldout("AoE")] public float AoeRadiusPercentage;
+    [SerializeField,Foldout("AoE")] private float _aoeRadiusPercentage;
+    public float AoeRadiusPercentage { get =>throw null;set =>throw null;}
     private bool ShowAoeRadiusPercentage => CanShowField || AoeRadiusPercentage != 0;
     [ShowIf(nameof(ShowAoeCriticalChance))]
-    [SerializeField,Foldout("AoE")] public float AoeCriticalChance;
+    [SerializeField,Foldout("AoE")] private float _aoeCriticalChance;
+    public float AoeCriticalChance { get =>throw null;set =>throw null;}
     private bool ShowAoeCriticalChance => CanShowField || AoeCriticalChance != 0;
     [ShowIf(nameof(ShowAoeRefire))]
-    [SerializeField,Foldout("AoE")] public float AoeRefire;
+    [SerializeField,Foldout("AoE")] private float _aoeRefire;
+    public float AoeRefire { get =>throw null;set =>throw null;}
     private bool ShowAoeRefire => CanShowField || AoeRefire != 0;
     [ShowIf(nameof(ShowChanceToShootAgain))]
-    [SerializeField,Foldout("Weapon")] public float ChanceToShootAgain;
+    [SerializeField,Foldout("Weapon")] private float _chanceToShootAgain;
+    public float ChanceToShootAgain { get =>throw null;set =>throw null;}
     private bool ShowChanceToShootAgain => CanShowField || ChanceToShootAgain != 0;
     [ShowIf(nameof(ShowAmmoPercentage))]
-    [SerializeField,Foldout("Weapon")] public float AmmoPercentage;
+    [SerializeField,Foldout("Weapon")] private float _ammoPercentage;
+    public float AmmoPercentage { get =>throw null;set =>throw null;}
     private bool ShowAmmoPercentage => CanShowField || AmmoPercentage != 0;
     [ShowIf(nameof(ShowAmmo))]
-    [SerializeField,Foldout("Weapon")] public float Ammo;
+    [SerializeField,Foldout("Weapon")] private float _ammo;
+    public float Ammo { get =>throw null;set =>throw null;}
     private bool ShowAmmo => CanShowField || Ammo != 0;
     [ShowIf(nameof(ShowMaxEnergy))]
-    [SerializeField,Foldout("Weapon")] public float MaxEnergy;
+    [SerializeField,Foldout("Weapon")] private float _maxEnergy;
+    public float MaxEnergy { get =>throw null;set =>throw null;}
     private bool ShowMaxEnergy => CanShowField || MaxEnergy != 0;
     [ShowIf(nameof(ShowMaxEnergyPercentage))]
-    [SerializeField,Foldout("Weapon")] public float MaxEnergyPercentage;
+    [SerializeField,Foldout("Weapon")] private float _maxEnergyPercentage;
+    public float MaxEnergyPercentage { get =>throw null;set =>throw null;}
     private bool ShowMaxEnergyPercentage => CanShowField || MaxEnergyPercentage != 0;
     [ShowIf(nameof(ShowEnergyPerShot))]
-    [SerializeField,Foldout("Weapon")] public float EnergyPerShot;
+    [SerializeField,Foldout("Weapon")] private float _energyPerShot;
+    public float EnergyPerShot { get =>throw null;set =>throw null;}
     private bool ShowEnergyPerShot => CanShowField || EnergyPerShot != 0;
     [ShowIf(nameof(ShowEnergyPerShotPercentage))]
-    [SerializeField,Foldout("Weapon")] public float EnergyPerShotPercentage;
+    [SerializeField,Foldout("Weapon")] private float _energyPerShotPercentage;
+    public float EnergyPerShotPercentage { get =>throw null;set =>throw null;}
     private bool ShowEnergyPerShotPercentage => CanShowField || EnergyPerShotPercentage != 0;
     [ShowIf(nameof(ShowManaMax))]
-    [SerializeField,Foldout("Mana")] public float ManaMax;
+    [SerializeField,Foldout("Mana")] private float _manaMax;
+    public float ManaMax { get =>throw null;set =>throw null;}
     private bool ShowManaMax => CanShowField || ManaMax != 0;
     [ShowIf(nameof(ShowManaMaxPercentage))]
-    [SerializeField,Foldout("Mana")] public float ManaMaxPercentage;
+    [SerializeField,Foldout("Mana")] private float _manaMaxPercentage;
+    public float ManaMaxPercentage { get =>throw null;set =>throw null;}
     private bool ShowManaMaxPercentage => CanShowField || ManaMaxPercentage != 0;
     [ShowIf(nameof(ShowManaRegeneration))]
-    [SerializeField,Foldout("Mana")] public float ManaRegeneration;
+    [SerializeField,Foldout("Mana")] private float _manaRegeneration;
+    public float ManaRegeneration { get =>throw null;set =>throw null;}
     private bool ShowManaRegeneration => CanShowField || ManaRegeneration != 0;
     [ShowIf(nameof(ShowManaRegenerationPercentage))]
-    [SerializeField,Foldout("Mana")] public float ManaRegenerationPercentage;
+    [SerializeField,Foldout("Mana")] private float _manaRegenerationPercentage;
+    public float ManaRegenerationPercentage { get =>throw null;set =>throw null;}
     private bool ShowManaRegenerationPercentage => CanShowField || ManaRegenerationPercentage != 0;
     [ShowIf(nameof(ShowManaCost))]
-    [SerializeField,Foldout("Mana")] public float ManaCost;
+    [SerializeField,Foldout("Mana")] private float _manaCost;
+    public float ManaCost { get =>throw null;set =>throw null;}
     private bool ShowManaCost => CanShowField || ManaCost != 0;
     [ShowIf(nameof(ShowManaCostPercentage))]
-    [SerializeField,Foldout("Mana")] public float ManaCostPercentage;
+    [SerializeField,Foldout("Mana")] private float _manaCostPercentage;
+    public float ManaCostPercentage { get =>throw null;set =>throw null;}
     private bool ShowManaCostPercentage => CanShowField || ManaCostPercentage != 0;
     [ShowIf(nameof(ShowGoldGainPercentage))]
-    [SerializeField,Foldout("Other")] public float GoldGainPercentage;
+    [SerializeField,Foldout("Other")] private float _goldGainPercentage;
+    public float GoldGainPercentage { get =>throw null;set =>throw null;}
     private bool ShowGoldGainPercentage => CanShowField || GoldGainPercentage != 0;
     [ShowIf(nameof(ShowLuck))]
-    [SerializeField,Foldout("Other")] public float Luck;
+    [SerializeField,Foldout("Other")] private float _luck;
+    public float Luck { get =>throw null;set =>throw null;}
     private bool ShowLuck => CanShowField || Luck != 0;
     [ShowIf(nameof(ShowExecutionRate))]
-    [SerializeField,Foldout("Other")] public float ExecutionRate;
+    [SerializeField,Foldout("Other")] private float _executionRate;
+    public float ExecutionRate { get =>throw null;set =>throw null;}
     private bool ShowExecutionRate => CanShowField || ExecutionRate != 0;
     [ShowIf(nameof(ShowDodgeChance))]
-    [SerializeField,Foldout("Other")] public float DodgeChance;
+    [SerializeField,Foldout("Other")] private float _dodgeChance;
+    public float DodgeChance { get =>throw null;set =>throw null;}
     private bool ShowDodgeChance => CanShowField || DodgeChance != 0;
     [ShowIf(nameof(ShowSummonDamagePercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonDamagePercentage;
+    [SerializeField,Foldout("Summon")] private float _summonDamagePercentage;
+    public float SummonDamagePercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonDamagePercentage => CanShowField || SummonDamagePercentage != 0;
     [ShowIf(nameof(ShowSummonHealthPercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonHealthPercentage;
+    [SerializeField,Foldout("Summon")] private float _summonHealthPercentage;
+    public float SummonHealthPercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonHealthPercentage => CanShowField || SummonHealthPercentage != 0;
     [ShowIf(nameof(ShowSummonSpeedPercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonSpeedPercentage;
+    [SerializeField,Foldout("Summon")] private float _summonSpeedPercentage;
+    public float SummonSpeedPercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonSpeedPercentage => CanShowField || SummonSpeedPercentage != 0;
     [ShowIf(nameof(ShowSummonAttackSpeedPercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonAttackSpeedPercentage;
+    [SerializeField,Foldout("Summon")] private float _summonAttackSpeedPercentage;
+    public float SummonAttackSpeedPercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonAttackSpeedPercentage => CanShowField || SummonAttackSpeedPercentage != 0;
     [ShowIf(nameof(ShowSummonHealingPercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonHealingPercentage;
+    [SerializeField,Foldout("Summon")] private float _summonHealingPercentage;
+    public float SummonHealingPercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonHealingPercentage => CanShowField || SummonHealingPercentage != 0;
     [ShowIf(nameof(ShowSummonArmorPercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonArmorPercentage;
+    [SerializeField,Foldout("Summon")] private float _summonArmorPercentage;
+    public float SummonArmorPercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonArmorPercentage => CanShowField || SummonArmorPercentage != 0;
     [ShowIf(nameof(ShowSummonArmorFlat))]
-    [SerializeField,Foldout("Summon")] public int SummonArmorFlat;
+    [SerializeField,Foldout("Summon")] private int _summonArmorFlat;
+    public int SummonArmorFlat { get =>throw null;set =>throw null;}
     private bool ShowSummonArmorFlat => CanShowField || SummonArmorFlat != 0;
     [ShowIf(nameof(ShowSummonLifestealPercentage))]
-    [SerializeField,Foldout("Summon")] public float SummonLifestealPercentage;
+    [SerializeField,Foldout("Summon")] private float _summonLifestealPercentage;
+    public float SummonLifestealPercentage { get =>throw null;set =>throw null;}
     private bool ShowSummonLifestealPercentage => CanShowField || SummonLifestealPercentage != 0;
     [ShowIf(nameof(ShowSummonDodgeChance))]
-    [SerializeField,Foldout("Summon")] public float SummonDodgeChance;
+    [SerializeField,Foldout("Summon")] private float _summonDodgeChance;
+    public float SummonDodgeChance { get =>throw null;set =>throw null;}
     private bool ShowSummonDodgeChance => CanShowField || SummonDodgeChance != 0;
     [ShowIf(nameof(ShowSummonDamageReduction))]
-    [SerializeField,Foldout("Summon")] public float SummonDamageReduction;
+    [SerializeField,Foldout("Summon")] private float _summonDamageReduction;
+    public float SummonDamageReduction { get =>throw null;set =>throw null;}
     private bool ShowSummonDamageReduction => CanShowField || SummonDamageReduction != 0;
     [ShowIf(nameof(ShowMaxSummon))]
-    [SerializeField,Foldout("Summon")] public int MaxSummon;
+    [SerializeField,Foldout("Summon")] private int _maxSummon;
+    public int MaxSummon { get =>throw null;set =>throw null;}
     private bool ShowMaxSummon => CanShowField || MaxSummon != 0;
     [ShowIf(nameof(ShowSummonExperience))]
-    [SerializeField,Foldout("Summon")] public float SummonExperience;
+    [SerializeField,Foldout("Summon")] private float _summonExperience;
+    public float SummonExperience { get =>throw null;set =>throw null;}
     private bool ShowSummonExperience => CanShowField || SummonExperience != 0;
     [ShowIf(nameof(ShowArmorPenetrationPercentage))]
-    [SerializeField,Foldout("Armor")] public float ArmorPenetrationPercentage;
+    [SerializeField,Foldout("Armor")] private float _armorPenetrationPercentage;
+    public float ArmorPenetrationPercentage { get =>throw null;set =>throw null;}
     private bool ShowArmorPenetrationPercentage => CanShowField || ArmorPenetrationPercentage != 0;
     [ShowIf(nameof(ShowArmorPenetrationFlat))]
-    [SerializeField,Foldout("Armor")] public int ArmorPenetrationFlat;
+    [SerializeField,Foldout("Armor")] private int _armorPenetrationFlat;
+    public int ArmorPenetrationFlat { get =>throw null;set =>throw null;}
     private bool ShowArmorPenetrationFlat => CanShowField || ArmorPenetrationFlat != 0;
 
     /// <summary>
@@ -391,6 +485,12 @@ public class StatsData
     public float GetFinalSpeed()
 {throw new System.NotImplementedException();}
     public void ResetStats()
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Overwrites every stat with the values of <paramref name="statsData"/> in a single pass.
+    /// Equivalent to <see cref="ResetStats"/> followed by <see cref="AddStats"/>, at half the cost.
+    /// </summary>
+    public void CopyFrom(StatsData statsData)
 {throw new System.NotImplementedException();}
     public void AddStats(StatsData statsData)
 {throw new System.NotImplementedException();}

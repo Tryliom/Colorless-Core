@@ -14,13 +14,18 @@ public class Experience
 	public Experience(float amount, float bonusMultiplier = 0f, float bonusAmount = 0f)
 {throw new System.NotImplementedException();}}
 
-public class EnemyLevelManager : MonoBehaviour
+public class EnemyLevelManager : MonoBehaviour, IPoolable
 {
 
 	public int Level { get; private set; } 	
 	// Only for allies that gain experience
 	public long Experience { get; private set; } 	public long MaxExperience =>throw null;
 
+	public void OnTakenFromPool() {throw new System.NotImplementedException();}
+	public void OnPoolStart()
+{throw new System.NotImplementedException();}
+	public void OnReturnedToPool()
+{throw new System.NotImplementedException();}
 	public void Setup(int level, long experience)
 {throw new System.NotImplementedException();}	
 	public void SetLevel(int level)

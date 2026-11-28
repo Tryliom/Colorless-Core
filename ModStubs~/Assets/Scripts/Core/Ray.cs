@@ -68,7 +68,7 @@ public class RaySettings
     public RaySettings Clone()
 {throw new System.NotImplementedException();}}
 
-public class Ray : MonoBehaviour
+public class Ray : MonoBehaviour, IPoolable
 {
 	[SerializeField,Foldout("Internal References")] private BoxCollider2D _hitCollider;
     [SerializeField,Foldout("Internal References")] private List<SpriteRenderer> _spritesPerLevel ;
@@ -125,6 +125,8 @@ public class Ray : MonoBehaviour
     public event Action<Ray> OnDeactivated;
 
     public void Deactivate()
+{throw new System.NotImplementedException();}
+    public void OnTakenFromPool()
 {throw new System.NotImplementedException();}
     public void Reset()
 {throw new System.NotImplementedException();}

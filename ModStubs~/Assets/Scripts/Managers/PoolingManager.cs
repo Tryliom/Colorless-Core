@@ -38,6 +38,46 @@ public class PoolingManager : MonoBehaviour
         public float DisabledTimer;
     }
 
+    /// <summary>
+    /// Returns an object of the generic pool <paramref name="id"/>, or instantiates <paramref name="prefab"/> if none is available.
+    /// A reused object gets <see cref="IPoolable.OnPoolStart"/> before its next update, a new one gets Start from Unity.
+    /// </summary>
+    public T CreatePoolable<T>(string id, T prefab, Vector3 position) where T : Component, IPoolable
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Sends an object created with <see cref="CreatePoolable{T}"/> back to its generic pool <paramref name="id"/>.
+    /// </summary>
+    public void ReturnPoolable(string id, IPoolable poolable)
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Returns an enemy from the pool, or instantiates a new poolable one if none is available.
+    /// A reused enemy gets its Start replayed later (before its first update), like a new instance.
+    /// Every enemy comes from here and lives under the PoolingManager, active or not.
+    /// </summary>
+    public EnemyComponents CreateEnemy(EnemyId enemyName, Vector3 position)
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Sends a dead enemy back to the pool. The return itself happens at the end of the frame, like Destroy.
+    /// </summary>
+    public void ReturnEnemy(EnemyComponents enemy)
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Ensures at least <paramref name="count"/> instances of the given projectile type exist in the pool.
+    /// The first Instantiate of a type is expensive (serialization setup, JIT), so doing it ahead of time
+    /// avoids a hitch on the first shot.
+    /// </summary>
+    public void PrewarmProjectile(ProjectileId type, int count)
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Ensures at least <paramref name="count"/> instances of the given ray type exist in the pool.
+    /// </summary>
+    public void PrewarmRay(RayId type, int count)
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Ensures at least <paramref name="count"/> instances of the given aoe type exist in the pool.
+    /// </summary>
+    public void PrewarmAoe(AoeId type, int count)
+{throw new System.NotImplementedException();}
     public Aoe CreateAoe(AoeId type, Vector3 position, bool playerTeam)
 {throw new System.NotImplementedException();}    
     public Projectile CreateProjectile(ProjectileId type, Vector3 position, bool playerTeam)

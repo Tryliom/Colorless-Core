@@ -14,6 +14,7 @@ namespace ColorlessOdyssey.Editor
             RayIdRegistry.Initialize();
             ProjectileIdRegistry.Initialize();
             AoeIdRegistry.Initialize();
+            EnemyIdRegistry.Initialize();
         }
     }
 }

@@ -2,7 +2,7 @@
 using MyInspector;
 using UnityEngine;
 
-public class TargetAdder : MonoBehaviour
+public class TargetAdder : MonoBehaviour, IPoolable
 {
 	private enum TargetType
 	{
@@ -10,4 +10,9 @@ public class TargetAdder : MonoBehaviour
 		PlayerAura,
 		BossAura
 	}
-}
+
+	public void OnTakenFromPool() {throw new System.NotImplementedException();}
+	public void OnPoolStart()
+{throw new System.NotImplementedException();}
+	public void OnReturnedToPool()
+{throw new System.NotImplementedException();}}

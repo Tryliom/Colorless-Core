@@ -55,7 +55,8 @@ public class EntityManager
 {throw new System.NotImplementedException();}    
     public GameObject GetRandomPlayerAlly(EnemyComponents ignoreEnemy = null, bool countPlayerIn = true, Func<GameObject, bool> filter = null)
 {throw new System.NotImplementedException();}
-    public class HomingTargetSettings
+    // Struct: built by every homing projectile each frame, a class allocated on each query
+    public struct HomingTargetSettings
     {
         public readonly Projectile Projectile;
         public Vector3 Position;
@@ -68,8 +69,7 @@ public class EntityManager
         public Vector3 FallingPosition;
         public GameObject IgnoreEntity;
         
-        public HomingTargetSettings(Projectile projectile, Vector3 position, Vector3 direction, float angularSpeed, float maxAngle, float maxDistance)
-{throw new System.NotImplementedException();}        
+        public HomingTargetSettings(Projectile projectile, Vector3 position, Vector3 direction, float angularSpeed, float maxAngle, float maxDistance) {throw new System.NotImplementedException();}        
         public void SetTargetPlayer()
 {throw new System.NotImplementedException();}        
         public void SetFalling(Vector3 fallingPosition)

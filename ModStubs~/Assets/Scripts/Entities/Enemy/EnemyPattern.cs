@@ -22,7 +22,7 @@ public enum BossType
     None, TheGoldenPile, AngryCloud, Monarch
 }
 
-public class EnemyPattern : MonoBehaviour
+public class EnemyPattern : MonoBehaviour, IPoolable
 {
     
     [Title("Special Values")]
@@ -42,9 +42,8 @@ public class EnemyPattern : MonoBehaviour
     [FormerlySerializedAs("_fly")] [SerializeField]
     public bool Flying;
     
-    
     [Title("Patterns")]
-    [SerializeReference,OnValueChanged(nameof(OnPatternsChanged))]
+    [SerializeReference,OnValueChanged(nameof(OnPatternsChanged)),ListDrawerSettings(ShowFoldout = true)]
     public List<Pattern> NoTargetPatterns;
     [SerializeField,ListDrawerSettings(ShowFoldout = true)]
     private List<CombinedPattern> _combinedPatterns ;
@@ -121,6 +120,11 @@ public class EnemyPattern : MonoBehaviour
     public bool IsAllowingAttackAnimation()
 {throw new System.NotImplementedException();}    
     public void AddSummonedEnemy(EnemyComponents enemy)
+{throw new System.NotImplementedException();}
+    public void OnTakenFromPool() {throw new System.NotImplementedException();}
+    public void OnPoolStart()
+{throw new System.NotImplementedException();}
+    public void OnReturnedToPool()
 {throw new System.NotImplementedException();}    
     public List<EnemyComponents> GetSummonedEnemies()
 {throw new System.NotImplementedException();}    

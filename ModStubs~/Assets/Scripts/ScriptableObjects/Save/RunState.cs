@@ -96,7 +96,7 @@ public class RoomState
 {
 	public List<RewardWithModifiers> Rewards ;
 	public string RoomName;
-	public EnemyName BossRoomEnemy;
+	public EnemyId BossRoomEnemy;
 	public Vector3 LastPlayerPosition;
 	[SerializeReference] public List<GroundItemData> GroundItems ;
 	public bool UseBackRoom;

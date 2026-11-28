@@ -7,7 +7,7 @@ using UnityEngine;
 namespace ColorlessOdyssey
 {
 	/// <summary>
-	/// Shared dropdown drawing of the string based ids (weapon, aoe, ray). Mods are grouped by namespace, base game ids are at the root.
+	/// Shared dropdown drawing of the string based ids (weapon, aoe, ray, enemy). Mods are grouped by namespace, base game ids are at the root.
 	/// </summary>
 	internal static class IdDrawerUtility
 	{
@@ -183,6 +183,25 @@ namespace ColorlessOdyssey
 				var ids = new List<string>();
 
 				foreach (var entry in AoeIdRegistry.GetAll())
+				{
+					ids.Add(entry.Id.Value);
+				}
+
+				return ids;
+			});
+		}
+	}
+
+	[CustomPropertyDrawer(typeof(EnemyId))]
+	public class EnemyIdDrawer : PropertyDrawer
+	{
+		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+		{
+			IdDrawerUtility.Draw(position, property, label, "Enemy Id", () =>
+			{
+				var ids = new List<string>();
+
+				foreach (var entry in EnemyIdRegistry.GetAll())
 				{
 					ids.Add(entry.Id.Value);
 				}

@@ -104,7 +104,7 @@ public class GridManager : MonoBehaviour
      * Sets tiles on a tilemap in a single batch call from a dictionary of position -> tile.
      */
     public static void SetTilesBatch(Tilemap tilemap, Dictionary<Vector3Int, TileBase> tilesMap)
-{throw new System.NotImplementedException();}    
+{throw new System.NotImplementedException();}
     public void UpdateCache()
 {throw new System.NotImplementedException();}
     /**

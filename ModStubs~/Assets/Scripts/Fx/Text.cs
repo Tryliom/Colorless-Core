@@ -23,7 +23,17 @@ internal class TextAnimation
 
 public class Text : MonoBehaviour
 {
-    
+
+    /// <summary>
+    /// Restores the default values of a pooled text before it is configured again.
+    /// </summary>
+    public void ResetForReuse()
+{throw new System.NotImplementedException();}
+    /// <summary>
+    /// Starts the animation once the text is configured. <paramref name="onFinished"/> is called instead of destroying the text.
+    /// </summary>
+    public void Play(Action<Text> onFinished)
+{throw new System.NotImplementedException();}    
     public void SetTextType(TextType textType)
 {throw new System.NotImplementedException();}    
     public void SetFontSizeMultiplier(float fontSizeMultiplier)
