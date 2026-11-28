@@ -74,7 +74,19 @@ public class Ray : MonoBehaviour, IPoolable
     [SerializeField,Foldout("Internal References")] private List<SpriteRenderer> _spritesPerLevel ;
     [SerializeField,Foldout("Internal References")] private List<SpriteRenderer> _startRay ;
     [SerializeField,Foldout("Internal References")] private List<SpriteRenderer> _endRay ;
-    
+
+    [SerializeField,Foldout("Setup Tools")]
+    private EffectMaterialType _bodyMaterialType;
+    [SerializeField,Foldout("Setup Tools"),ShowIf(nameof(HasCustomBodyMaterial))]
+    private Material _customBodyMaterial;
+    [SerializeField,Foldout("Setup Tools")]
+    private EffectMaterialType _startEndMaterialType;
+    [SerializeField,Foldout("Setup Tools"),ShowIf(nameof(HasCustomStartEndMaterial))]
+    private Material _customStartEndMaterial;
+
+    private bool HasCustomBodyMaterial => _bodyMaterialType is EffectMaterialType.Custom;
+    private bool HasCustomStartEndMaterial => _startEndMaterialType is EffectMaterialType.Custom;
+
     [Title("General Properties")]
     [SerializeField] private RayId _rayId;
     [SerializeField] private DamageType _damageType ;

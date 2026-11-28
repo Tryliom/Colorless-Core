@@ -103,6 +103,10 @@ public class Aoe : MonoBehaviour, IPoolable
     }
     
     [SerializeField,Foldout("Sprite & Animation")] private SpriteRenderer _spriteRenderer;
+    [SerializeField,Foldout("Setup Tools")]
+    private EffectMaterialType _materialType;
+    [SerializeField,Foldout("Setup Tools"),ShowIf(nameof(HasCustomMaterial))]
+    private Material _customMaterial;
     [SerializeField,Foldout("Sprite & Animation")] private Sprite _appearanceForPlayer;
     [FormerlySerializedAs("_enemySprite")]
     [SerializeField,Foldout("Sprite & Animation")] private Sprite _appearanceForEnemy;
@@ -187,6 +191,7 @@ public class Aoe : MonoBehaviour, IPoolable
     
     // Inspector
     private bool HasDamageTypeAnEffect => _damageType != DamageType.Typeless && _damageType != DamageType.Normal && _damageType != DamageType.Soul;
+    private bool HasCustomMaterial => _materialType is EffectMaterialType.Custom;
     
     // Current damage type
     private DamageType _currentDamageType;

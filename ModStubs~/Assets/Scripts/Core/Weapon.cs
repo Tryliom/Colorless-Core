@@ -501,7 +501,15 @@ public class Weapon : MonoBehaviour
     private List<SpriteSortingZ> _spriteSortingZPerLevel;
     [SerializeField,Foldout("Static References")]
     private GameObject _projectileSpawnPoint;
-    
+
+    [SerializeField,Foldout("Setup Tools")]
+    private EffectMaterialType _materialType;
+    [SerializeField,Foldout("Setup Tools"),ShowIf(nameof(HasCustomMaterial))]
+    [InfoBox("Must expose _EmissivePower to glow during melee swings.")]
+    private Material _customMaterial;
+
+    private bool HasCustomMaterial => _materialType is EffectMaterialType.Custom;
+
     [SerializeField,Foldout("Sprite Animations")] private List<TraditionalAnimation> _idleAnimation ;
     [SerializeField,Foldout("Sprite Animations")] private List<TraditionalAnimation> _attackAnimation ;
     [Tooltip("Played once the attack animation is finished, before going back to idle. If empty, idle is played directly after the attack.")]
@@ -621,6 +629,9 @@ public class Weapon : MonoBehaviour
 {throw new System.NotImplementedException();}
     /// <summary>Forgets the cooldown applied after skipping shots, used when a real shot or cooldown end takes over.</summary>
     public void ClearAppliedCooldown()
+{throw new System.NotImplementedException();}
+    /// <summary>Returns the material of the weapon sprites. Also usable on a prefab asset, e.g. to display it in a shop.</summary>
+    public Material ResolveMaterial()
 {throw new System.NotImplementedException();}    
     /**
      * Set the class target instance to save and load its data using [SaveData] attribute on the fields of the class between rooms
